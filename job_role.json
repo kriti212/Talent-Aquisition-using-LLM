@@ -1,0 +1,876 @@
+[
+  {
+    "job_role": "Software Engineer",
+    "skills": [
+      {
+        "skill_name": "Programming Languages (e.g., Python, Java)",
+        "weight": 81.33
+      },
+      {
+        "skill_name": "Data Structures",
+        "weight": 51.23
+      },
+      {
+        "skill_name": "Algorithms",
+        "weight": 63.48
+      },
+      {
+        "skill_name": "System Architecture",
+        "weight": 60.94
+      },
+      {
+        "skill_name": "Version Control (Git)",
+        "weight": 86.09
+      },
+      {
+        "skill_name": "Database Management",
+        "weight": 83.16
+      },
+      {
+        "skill_name": "Problem Solving",
+        "weight": 93.72
+      },
+      {
+        "skill_name": "Debugging",
+        "weight": 54.26
+      },
+      {
+        "skill_name": "Agile Methodologies",
+        "weight": 70.67
+      },
+      {
+        "skill_name": "Cloud Computing Basics",
+        "weight": 51.46
+      }
+    ],
+    "job_description": "Design, develop, test, and maintain robust software applications\nCollaborate with cross-functional teams to define software requirements\nWrite clean, efficient, and well-documented code\nTroubleshoot complex issues and participate in peer code reviews\nContinuously learn and integrate new technologies to drive innovation"
+  },
+  {
+    "job_role": "Data Analyst",
+    "skills": [
+      {
+        "skill_name": "SQL",
+        "weight": 60.71
+      },
+      {
+        "skill_name": "Python or R",
+        "weight": 74.76
+      },
+      {
+        "skill_name": "Data Visualization (Tableau/Power BI)",
+        "weight": 51.3
+      },
+      {
+        "skill_name": "Statistical Analysis",
+        "weight": 59.74
+      },
+      {
+        "skill_name": "Excel/Spreadsheets",
+        "weight": 81.84
+      },
+      {
+        "skill_name": "Data Cleaning",
+        "weight": 76.7
+      },
+      {
+        "skill_name": "Critical Thinking",
+        "weight": 60.8
+      },
+      {
+        "skill_name": "Business Acumen",
+        "weight": 78.87
+      },
+      {
+        "skill_name": "Communication",
+        "weight": 89.66
+      },
+      {
+        "skill_name": "Predictive Modeling Basics",
+        "weight": 50.32
+      }
+    ],
+    "job_description": "Analyze datasets using Excel, SQL, and Power BI\nPerform data cleaning, transformation, and validation\nCreate interactive dashboards and reports\nExtract insights to support business decision-making"
+  },
+  {
+    "job_role": "Business Analyst",
+    "skills": [
+      {
+        "skill_name": "Requirements Gathering",
+        "weight": 89.49
+      },
+      {
+        "skill_name": "Process Modeling",
+        "weight": 84.21
+      },
+      {
+        "skill_name": "Data Analysis",
+        "weight": 66.67
+      },
+      {
+        "skill_name": "Stakeholder Management",
+        "weight": 57.62
+      },
+      {
+        "skill_name": "Agile/Scrum Framework",
+        "weight": 96.9
+      },
+      {
+        "skill_name": "Business Intelligence",
+        "weight": 66.49
+      },
+      {
+        "skill_name": "Problem Solving",
+        "weight": 54.54
+      },
+      {
+        "skill_name": "Documentation",
+        "weight": 54.74
+      },
+      {
+        "skill_name": "Clear Communication",
+        "weight": 91.53
+      },
+      {
+        "skill_name": "Financial Modeling",
+        "weight": 79.58
+      }
+    ],
+    "job_description": "Assess business processes and bridge the gap between IT and business departments\nGather requirements and translate them into detailed technical specifications\nMonitor project progress and manage scope changes effectively\nDeliver data-driven recommendations to align with business objectives\nIdentify areas for continuous operational improvement"
+  },
+  {
+    "job_role": "Customer Support Executive",
+    "skills": [
+      {
+        "skill_name": "Active Listening",
+        "weight": 89.55
+      },
+      {
+        "skill_name": "Empathy",
+        "weight": 85.76
+      },
+      {
+        "skill_name": "Conflict Resolution",
+        "weight": 76.28
+      },
+      {
+        "skill_name": "CRM Software (e.g., Zendesk)",
+        "weight": 97.68
+      },
+      {
+        "skill_name": "Clear Communication",
+        "weight": 68.55
+      },
+      {
+        "skill_name": "Patience",
+        "weight": 77.05
+      },
+      {
+        "skill_name": "Time Management",
+        "weight": 90.64
+      },
+      {
+        "skill_name": "Product Knowledge",
+        "weight": 80.31
+      },
+      {
+        "skill_name": "Multitasking",
+        "weight": 92.22
+      },
+      {
+        "skill_name": "Adaptability",
+        "weight": 78.29
+      }
+    ],
+    "job_description": "Serve as the primary point of contact for client queries and issues\nHandle incoming calls, emails, and chat messages with empathy\nTroubleshoot problems and escalate complex technical issues\nDocument customer interactions accurately in CRM systems\nBuild customer loyalty and maintain a positive brand reputation"
+  },
+  {
+    "job_role": "Sales Executive",
+    "skills": [
+      {
+        "skill_name": "Negotiation",
+        "weight": 84.52
+      },
+      {
+        "skill_name": "Lead Generation",
+        "weight": 52.25
+      },
+      {
+        "skill_name": "Client Relationship Management",
+        "weight": 61.17
+      },
+      {
+        "skill_name": "Persuasion",
+        "weight": 64.18
+      },
+      {
+        "skill_name": "CRM Management (e.g., Salesforce)",
+        "weight": 53.91
+      },
+      {
+        "skill_name": "Presentation Skills",
+        "weight": 61.41
+      },
+      {
+        "skill_name": "Active Listening",
+        "weight": 54.95
+      },
+      {
+        "skill_name": "Closing Techniques",
+        "weight": 63.62
+      },
+      {
+        "skill_name": "Market Research",
+        "weight": 81.15
+      },
+      {
+        "skill_name": "Time Management",
+        "weight": 67.88
+      }
+    ],
+    "job_description": "Identify new market opportunities and generate qualified leads\nBuild and maintain strong relationships with potential and existing clients\nDeliver persuasive presentations and pitch products effectively\nNegotiate contracts and close deals to meet revenue targets\nTrack sales metrics and refine selling strategies continuously"
+  },
+  {
+    "job_role": "Marketing Associate",
+    "skills": [
+      {
+        "skill_name": "Content Creation",
+        "weight": 68.14
+      },
+      {
+        "skill_name": "Social Media Management",
+        "weight": 60.27
+      },
+      {
+        "skill_name": "SEO/SEM Basics",
+        "weight": 63.08
+      },
+      {
+        "skill_name": "Email Marketing",
+        "weight": 95.9
+      },
+      {
+        "skill_name": "Market Research",
+        "weight": 81.75
+      },
+      {
+        "skill_name": "Copywriting",
+        "weight": 79.85
+      },
+      {
+        "skill_name": "Analytics (Google Analytics)",
+        "weight": 58.39
+      },
+      {
+        "skill_name": "Campaign Management",
+        "weight": 85.73
+      },
+      {
+        "skill_name": "Creativity",
+        "weight": 58.01
+      },
+      {
+        "skill_name": "Basic Graphic Design",
+        "weight": 68.59
+      }
+    ],
+    "job_description": "Develop and execute promotional campaigns to drive customer engagement\nCreate compelling content for social media, blogs, and newsletters\nTrack campaign performance using analytics tools to optimize strategies\nConduct competitor research to identify market trends\nCollaborate with cross-functional teams to ensure consistent brand messaging"
+  },
+  {
+    "job_role": "HR Executive",
+    "skills": [
+      {
+        "skill_name": "Recruitment & Selection",
+        "weight": 98.49
+      },
+      {
+        "skill_name": "Employee Relations",
+        "weight": 81.36
+      },
+      {
+        "skill_name": "Performance Management",
+        "weight": 77.29
+      },
+      {
+        "skill_name": "HRIS Administration",
+        "weight": 83.55
+      },
+      {
+        "skill_name": "Onboarding",
+        "weight": 91.3
+      },
+      {
+        "skill_name": "Conflict Resolution",
+        "weight": 88.02
+      },
+      {
+        "skill_name": "Labor Law Knowledge",
+        "weight": 61.22
+      },
+      {
+        "skill_name": "Communication",
+        "weight": 51.57
+      },
+      {
+        "skill_name": "Empathy",
+        "weight": 65.46
+      },
+      {
+        "skill_name": "Organizational Skills",
+        "weight": 63.12
+      }
+    ],
+    "job_description": "Manage the full employee lifecycle including onboarding and orientation\nAdminister benefits and maintain accurate employee records\nAct as a mediator in employee relations and facilitate conflict resolution\nImplement HR policies and conduct performance appraisals\nEnsure a healthy, productive, and compliant workplace environment"
+  },
+  {
+    "job_role": "Recruiter",
+    "skills": [
+      {
+        "skill_name": "Sourcing Candidates",
+        "weight": 60.34
+      },
+      {
+        "skill_name": "Interviewing Techniques",
+        "weight": 96.2
+      },
+      {
+        "skill_name": "Applicant Tracking Systems (ATS)",
+        "weight": 92.94
+      },
+      {
+        "skill_name": "Professional Networking",
+        "weight": 65.42
+      },
+      {
+        "skill_name": "Salary Negotiation",
+        "weight": 82.12
+      },
+      {
+        "skill_name": "Employer Branding",
+        "weight": 69.39
+      },
+      {
+        "skill_name": "Communication",
+        "weight": 94.81
+      },
+      {
+        "skill_name": "Assessment Strategies",
+        "weight": 72.48
+      },
+      {
+        "skill_name": "Time Management",
+        "weight": 62.98
+      },
+      {
+        "skill_name": "Salesmanship",
+        "weight": 62.08
+      }
+    ],
+    "job_description": "Source potential talent through job boards, social media, and networking\nScreen resumes and evaluate candidate qualifications\nConduct initial interviews and coordinate with hiring managers\nManage job offers and negotiate salary terms\nEnsure a seamless and positive candidate experience throughout the hiring process"
+  },
+  {
+    "job_role": "Operations Executive",
+    "skills": [
+      {
+        "skill_name": "Process Optimization",
+        "weight": 77.51
+      },
+      {
+        "skill_name": "Supply Chain Management",
+        "weight": 62.87
+      },
+      {
+        "skill_name": "Inventory Control",
+        "weight": 78.64
+      },
+      {
+        "skill_name": "Data Analysis",
+        "weight": 93.99
+      },
+      {
+        "skill_name": "Project Management",
+        "weight": 69.57
+      },
+      {
+        "skill_name": "Vendor Management",
+        "weight": 60.75
+      },
+      {
+        "skill_name": "Problem Solving",
+        "weight": 98.88
+      },
+      {
+        "skill_name": "Budgeting",
+        "weight": 74.97
+      },
+      {
+        "skill_name": "Risk Management",
+        "weight": 54.45
+      },
+      {
+        "skill_name": "Leadership",
+        "weight": 52.31
+      }
+    ],
+    "job_description": "Oversee daily business activities to ensure cross-departmental efficiency\nAnalyze current operational processes and identify bottlenecks\nManage inventory, coordinate logistics, and monitor supply chains\nTrack operational metrics and implement strategic improvements\nEnsure strict adherence to company safety and compliance regulations"
+  },
+  {
+    "job_role": "Project Coordinator",
+    "skills": [
+      {
+        "skill_name": "Project Planning",
+        "weight": 55.37
+      },
+      {
+        "skill_name": "Time Management",
+        "weight": 80.74
+      },
+      {
+        "skill_name": "Risk Identification",
+        "weight": 88.81
+      },
+      {
+        "skill_name": "Agile Methodologies",
+        "weight": 70.69
+      },
+      {
+        "skill_name": "Budget Tracking",
+        "weight": 53.11
+      },
+      {
+        "skill_name": "Detailed Documentation",
+        "weight": 68.7
+      },
+      {
+        "skill_name": "Communication",
+        "weight": 98.81
+      },
+      {
+        "skill_name": "Task Delegation",
+        "weight": 75.93
+      },
+      {
+        "skill_name": "Project Management Software (Jira/Asana)",
+        "weight": 97.58
+      },
+      {
+        "skill_name": "Problem Solving",
+        "weight": 92.18
+      }
+    ],
+    "job_description": "Organize, track, and facilitate project activities to ensure timely completion\nMaintain detailed project documentation, schedules, and risk logs\nMonitor tasks and deadlines to quickly identify potential delays\nCoordinate with team members to find effective solutions\nAct as a vital communication bridge between stakeholders and project managers"
+  },
+  {
+    "job_role": "Content Writer",
+    "skills": [
+      {
+        "skill_name": "Copywriting",
+        "weight": 50.56
+      },
+      {
+        "skill_name": "SEO Optimization",
+        "weight": 85.32
+      },
+      {
+        "skill_name": "Deep Research",
+        "weight": 83.4
+      },
+      {
+        "skill_name": "Editing & Proofreading",
+        "weight": 76.31
+      },
+      {
+        "skill_name": "Adaptability to Brand Voice",
+        "weight": 63.07
+      },
+      {
+        "skill_name": "Time Management",
+        "weight": 81.41
+      },
+      {
+        "skill_name": "Creativity",
+        "weight": 55.47
+      },
+      {
+        "skill_name": "Content Strategy",
+        "weight": 71.3
+      },
+      {
+        "skill_name": "Social Media Writing",
+        "weight": 72.23
+      },
+      {
+        "skill_name": "Storytelling",
+        "weight": 96.74
+      }
+    ],
+    "job_description": "Produce engaging and relevant written material for various platforms\nConduct thorough research on industry-related topics for original content\nStrategically incorporate keywords to optimize web content for SEO\nEnsure all content aligns with target audience needs and brand guidelines\nCollaborate with design teams to perfect content before final publication"
+  },
+  {
+    "job_role": "Accountant",
+    "skills": [
+      {
+        "skill_name": "Financial Reporting",
+        "weight": 92.92
+      },
+      {
+        "skill_name": "Bookkeeping",
+        "weight": 62.91
+      },
+      {
+        "skill_name": "Tax Preparation",
+        "weight": 74.53
+      },
+      {
+        "skill_name": "Auditing",
+        "weight": 58.75
+      },
+      {
+        "skill_name": "Accounting Software (QuickBooks/SAP)",
+        "weight": 94.72
+      },
+      {
+        "skill_name": "Advanced Excel",
+        "weight": 92.66
+      },
+      {
+        "skill_name": "Analytical Skills",
+        "weight": 64.62
+      },
+      {
+        "skill_name": "Attention to Detail",
+        "weight": 81.31
+      },
+      {
+        "skill_name": "Regulatory Compliance",
+        "weight": 79.84
+      },
+      {
+        "skill_name": "Mathematical Proficiency",
+        "weight": 57.49
+      }
+    ],
+    "job_description": "Manage and examine financial records to ensure accuracy and compliance\nPrepare balance sheets, profit and loss statements, and tax returns\nReconcile bank statements and maintain accurate ledger accounts\nAnalyze financial data to provide forecasts and budgeting insights\nPlay a crucial role in preparing for internal and external audits"
+  },
+  {
+    "job_role": "Administrative Assistant",
+    "skills": [
+      {
+        "skill_name": "Calendar Management",
+        "weight": 87.36
+      },
+      {
+        "skill_name": "Data Entry",
+        "weight": 76.43
+      },
+      {
+        "skill_name": "Microsoft Office Suite",
+        "weight": 88.15
+      },
+      {
+        "skill_name": "Professional Communication",
+        "weight": 75.99
+      },
+      {
+        "skill_name": "Organization",
+        "weight": 50.03
+      },
+      {
+        "skill_name": "Time Management",
+        "weight": 65.88
+      },
+      {
+        "skill_name": "Multitasking",
+        "weight": 50.95
+      },
+      {
+        "skill_name": "Customer Service",
+        "weight": 95.53
+      },
+      {
+        "skill_name": "Event Planning",
+        "weight": 93.06
+      },
+      {
+        "skill_name": "Problem Solving",
+        "weight": 90.75
+      }
+    ],
+    "job_description": "Provide essential clerical support to ensure efficient office operations\nAnswer phones, respond to emails, and schedule complex meetings\nMaintain office filing systems and order necessary supplies\nPrepare basic reports, presentations, and correspondence as needed\nServe as the first point of contact for visitors and external partners"
+  },
+  {
+    "job_role": "Technical Support Engineer",
+    "skills": [
+      {
+        "skill_name": "Hardware/Software Troubleshooting",
+        "weight": 65.07
+      },
+      {
+        "skill_name": "Operating Systems (Windows/Linux/Mac)",
+        "weight": 52.84
+      },
+      {
+        "skill_name": "Networking Basics",
+        "weight": 93.02
+      },
+      {
+        "skill_name": "Ticketing Systems (Jira/ServiceNow)",
+        "weight": 96.4
+      },
+      {
+        "skill_name": "Customer Service",
+        "weight": 54.2
+      },
+      {
+        "skill_name": "Analytical Thinking",
+        "weight": 73.81
+      },
+      {
+        "skill_name": "Patience",
+        "weight": 53.39
+      },
+      {
+        "skill_name": "Clear Communication",
+        "weight": 87.27
+      },
+      {
+        "skill_name": "Time Management",
+        "weight": 87.53
+      },
+      {
+        "skill_name": "Technical Documentation",
+        "weight": 56.29
+      }
+    ],
+    "job_description": "Provide specialized IT assistance for hardware, software, or network issues\nDiagnose and troubleshoot technical problems step-by-step\nGuide users to resolution via phone, remote desktop, or ticketing systems\nReplicate bugs and escalate complex issues to appropriate engineering teams\nCreate self-help guides to empower users and reduce ticket volumes"
+  },
+  {
+    "job_role": "Product Manager",
+    "skills": [
+      {
+        "skill_name": "Product Strategy",
+        "weight": 73.29
+      },
+      {
+        "skill_name": "Market Research",
+        "weight": 76.94
+      },
+      {
+        "skill_name": "Agile/Scrum Leadership",
+        "weight": 62.99
+      },
+      {
+        "skill_name": "UX/UI Understanding",
+        "weight": 92.75
+      },
+      {
+        "skill_name": "Data Analysis",
+        "weight": 70.73
+      },
+      {
+        "skill_name": "Stakeholder Management",
+        "weight": 60.38
+      },
+      {
+        "skill_name": "Roadmapping",
+        "weight": 76.43
+      },
+      {
+        "skill_name": "Prioritization",
+        "weight": 85.77
+      },
+      {
+        "skill_name": "Leadership",
+        "weight": 59.86
+      },
+      {
+        "skill_name": "Cross-functional Collaboration",
+        "weight": 65.27
+      }
+    ],
+    "job_description": "Lead the conceptualization, development, and launch of new products\nDefine the product vision, strategy, and roadmap based on market research\nTranslate strategic goals into actionable requirements for engineering teams\nBalance business objectives and technical constraints to prioritize backlogs\nAnalyze post-launch metrics to continuously iterate and improve products"
+  },
+  {
+    "job_role": "QA/Test Engineer",
+    "skills": [
+      {
+        "skill_name": "Manual Testing",
+        "weight": 98.76
+      },
+      {
+        "skill_name": "Automated Testing (Selenium/Cypress)",
+        "weight": 81.84
+      },
+      {
+        "skill_name": "Bug Tracking Software",
+        "weight": 71.47
+      },
+      {
+        "skill_name": "API Testing",
+        "weight": 75.36
+      },
+      {
+        "skill_name": "Test Planning & Creation",
+        "weight": 55.93
+      },
+      {
+        "skill_name": "Agile Methodologies",
+        "weight": 61.01
+      },
+      {
+        "skill_name": "Attention to Detail",
+        "weight": 66.57
+      },
+      {
+        "skill_name": "Programming Basics",
+        "weight": 78.83
+      },
+      {
+        "skill_name": "Performance Testing",
+        "weight": 61.28
+      },
+      {
+        "skill_name": "Critical Thinking",
+        "weight": 60.79
+      }
+    ],
+    "job_description": "Ensure the quality, reliability, and performance of software applications\nDesign and execute detailed manual and automated test plans\nIdentify, document, and track bugs, defects, and usability issues\nVerify fixes with developers to ensure software meets specified requirements\nAdvocate for best practices in quality assurance throughout the development cycle"
+  },
+  {
+    "job_role": "UI/UX Designer",
+    "skills": [
+      {
+        "skill_name": "Wireframing & Prototyping (Figma/Adobe XD)",
+        "weight": 53.48
+      },
+      {
+        "skill_name": "User Research",
+        "weight": 80.92
+      },
+      {
+        "skill_name": "Interaction Design",
+        "weight": 61.22
+      },
+      {
+        "skill_name": "Visual Design",
+        "weight": 94.37
+      },
+      {
+        "skill_name": "Information Architecture",
+        "weight": 92.12
+      },
+      {
+        "skill_name": "Usability Testing",
+        "weight": 53.47
+      },
+      {
+        "skill_name": "Empathy",
+        "weight": 61.66
+      },
+      {
+        "skill_name": "Problem Solving",
+        "weight": 82.78
+      },
+      {
+        "skill_name": "Basic HTML/CSS Understanding",
+        "weight": 60.5
+      },
+      {
+        "skill_name": "Typography & Color Theory",
+        "weight": 56.48
+      }
+    ],
+    "job_description": "Craft intuitive and visually appealing digital experiences\nConduct user research and usability testing to gather actionable insights\nCreate user personas, journey maps, and information architecture\nDesign low-fidelity wireframes and high-fidelity interactive prototypes\nIterate on designs continuously based on user feedback and testing"
+  },
+  {
+    "job_role": "Digital Marketing Executive",
+    "skills": [
+      {
+        "skill_name": "SEO/SEM",
+        "weight": 95.84
+      },
+      {
+        "skill_name": "Pay-Per-Click (PPC) Advertising",
+        "weight": 77.98
+      },
+      {
+        "skill_name": "Social Media Marketing",
+        "weight": 73.16
+      },
+      {
+        "skill_name": "Content Marketing",
+        "weight": 88.45
+      },
+      {
+        "skill_name": "Email Marketing",
+        "weight": 89.57
+      },
+      {
+        "skill_name": "Web Analytics (Google Analytics)",
+        "weight": 59.33
+      },
+      {
+        "skill_name": "Conversion Rate Optimization (CRO)",
+        "weight": 54.75
+      },
+      {
+        "skill_name": "Copywriting",
+        "weight": 71.12
+      },
+      {
+        "skill_name": "CRM Software",
+        "weight": 70.76
+      },
+      {
+        "skill_name": "Strategic Planning",
+        "weight": 72.88
+      }
+    ],
+    "job_description": "Develop and manage online marketing campaigns across various channels\nUtilize SEO, SEM, and social media to drive targeted traffic\nMonitor campaign metrics and user engagement to optimize ad spend\nGenerate qualified leads and improve conversion rates\nStay abreast of the latest digital trends to maintain a competitive edge"
+  },
+  {
+    "job_role": "Office Administrator",
+    "skills": [
+      {
+        "skill_name": "Facility Management",
+        "weight": 85.72
+      },
+      {
+        "skill_name": "Budgeting",
+        "weight": 82.99
+      },
+      {
+        "skill_name": "Vendor Management",
+        "weight": 98.22
+      },
+      {
+        "skill_name": "Communication",
+        "weight": 54.82
+      },
+      {
+        "skill_name": "Organizational Skills",
+        "weight": 69.73
+      },
+      {
+        "skill_name": "Microsoft Office Suite",
+        "weight": 66.63
+      },
+      {
+        "skill_name": "Event Coordination",
+        "weight": 92.22
+      },
+      {
+        "skill_name": "Time Management",
+        "weight": 62.18
+      },
+      {
+        "skill_name": "Problem Solving",
+        "weight": 59.32
+      },
+      {
+        "skill_name": "Basic HR Functions",
+        "weight": 71.98
+      }
+    ],
+    "job_description": "Oversee daily workplace operations to ensure a safe and functional environment\nManage relationships with facility vendors and coordinate maintenance\nNegotiate contracts for office supplies to keep operations within budget\nOrganize corporate events and manage office seating arrangements\nAssist in implementing health and safety policies for all employees"
+  }
+]
