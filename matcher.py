@@ -157,3 +157,60 @@ def recommend_roles(candidate_skills, all_roles):
     
     # Return top 5
     return scored_roles[:5]
+
+def vector_search_jobs(resume_text, all_roles):
+    """
+    Performs a local vector similarity search.
+    Generates embedding for candidate's resume text,
+    compares it to the pre-computed 'embedding' stored in MongoDB for each job role,
+    and returns all roles sorted by similarity descending.
+    """
+    model = load_bert_model()
+    if model is None or _using_fallback:
+        import re
+        print("BERT model is not loaded. Performing token-overlap fallback search.")
+        try:
+            scored_roles = []
+            resume_words = set(re.findall(r'\b\w+\b', resume_text.lower()))
+            for role in all_roles:
+                role_text = f"{role.get('job_role', '')} {role.get('job_description', '')}"
+                role_words = set(re.findall(r'\b\w+\b', role_text.lower()))
+                overlap = len(resume_words.intersection(role_words))
+                score = (overlap / max(1, len(role_words))) * 100.0
+                scored_roles.append({
+                    "job_role": role.get("job_role", ""),
+                    "vector_score": round(score, 2),
+                    "role_document": role
+                })
+            scored_roles.sort(key=lambda x: x["vector_score"], reverse=True)
+            return scored_roles
+        except Exception as e:
+            print(f"Error during Jaccard fallback search: {str(e)}")
+            return []
+        
+    try:
+        # Generate candidate embedding
+        cand_embedding = model.encode(resume_text, show_progress_bar=False)
+        
+        scored_roles = []
+        for role in all_roles:
+            role_emb = role.get("embedding")
+            if role_emb:
+                # Calculate cosine similarity
+                similarity = get_cosine_similarity(cand_embedding, np.array(role_emb))
+                similarity = max(0.0, similarity)
+            else:
+                similarity = 0.0
+                
+            scored_roles.append({
+                "job_role": role.get("job_role", ""),
+                "vector_score": round(similarity * 100.0, 2),
+                "role_document": role
+            })
+            
+        # Sort by similarity score descending
+        scored_roles.sort(key=lambda x: x["vector_score"], reverse=True)
+        return scored_roles
+    except Exception as e:
+        print(f"Error during local vector search: {str(e)}")
+        return []

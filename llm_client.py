@@ -17,6 +17,12 @@ def query_llm(messages, temperature=0.2, json_mode=False, model_name=None):
         }
     }
     
+    # Enforce deterministic greedy decoding parameters when temperature is 0.0
+    if temperature == 0.0:
+        payload["options"]["seed"] = 42
+        payload["options"]["top_k"] = 1
+        payload["options"]["top_p"] = 0.0
+    
     # Ollama supports forcing JSON format output
     if json_mode:
         payload["format"] = "json"
