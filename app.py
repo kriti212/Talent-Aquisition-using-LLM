@@ -117,66 +117,6 @@ html, body, [class*="css"] {
 </style>
 """, unsafe_allow_html=True)
 
-# =====================================================
-# SARVAM SPEECH-TO-TEXT INTEGRATION (NEW)
-# =====================================================
-
-def sarvam_speech_to_text(audio_bytes: bytes) -> str:
-    """
-    Convert speech audio to text using Sarvam's speech-to-text API.
-    Supports Hindi, Bengali, and mixed language.
-    """
-    try:
-        api_key = st.secrets.get("SARVAM_API_KEY", "")
-        if not api_key:
-            st.warning("⚠️ Sarvam API key missing. Using Google STT fallback.")
-            return google_speech_to_text(audio_bytes)
-        
-        # Check audio size
-        if len(audio_bytes) < 1000:
-            st.warning("Audio too short. Please speak longer.")
-            return ""
-        
-        # Sarvam expects WAV format
-        headers = {
-            "api-subscription-key": api_key,
-        }
-        
-        files = {
-            "file": ("audio.wav", audio_bytes, "audio/wav")
-        }
-        
-        data = {
-            "language_code": "auto",  # Auto-detects Hindi/Bengali
-            "model": "saarika-v2",
-            "with_diarization": "false"
-        }
-        
-        response = requests.post(
-            "https://api.sarvam.ai/speech-to-text",
-            headers=headers,
-            files=files,
-            data=data,
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            result = response.json()
-            transcript = result.get("transcript", "")
-            if transcript:
-                return transcript.strip()
-            else:
-                st.warning("No speech detected. Please try again.")
-                return ""
-        else:
-            print(f"Sarvam STT error: {response.status_code}")
-            # Fallback to Google STT
-            return google_speech_to_text(audio_bytes)
-            
-    except Exception as e:
-        print(f"Sarvam STT error: {e}")
-        # Fallback to Google STT
-        return google_speech_to_text(audio_bytes)
 
 def google_speech_to_text(audio_bytes: bytes) -> str:
     """
@@ -239,6 +179,36 @@ def compress_wav(wav_bytes):
         return wav_bytes
 
 # =====================================================
+# CONVERT WAV TO MP3
+# =====================================================
+
+def wav_to_mp3(wav_bytes):
+    try:
+        import wave
+        import lameenc
+        
+        wav_io = io.BytesIO(wav_bytes)
+        with wave.open(wav_io, 'rb') as wav_file:
+            num_channels = wav_file.getnchannels()
+            sample_width = wav_file.getsampwidth()
+            sample_rate = wav_file.getframerate()
+            num_frames = wav_file.getnframes()
+            pcm_data = wav_file.readframes(num_frames)
+            
+        encoder = lameenc.Encoder()
+        encoder.set_bit_rate(128)
+        encoder.set_in_sample_rate(sample_rate)
+        encoder.set_channels(num_channels)
+        encoder.set_quality(2)
+        
+        mp3_data = encoder.encode(pcm_data)
+        mp3_data += encoder.flush()
+        return mp3_data
+    except Exception as e:
+        print(f"Error encoding to MP3: {e}")
+        return wav_bytes
+
+# =====================================================
 # TEXT-TO-SPEECH (Voice Reader)
 # =====================================================
 
@@ -286,8 +256,6 @@ if "voice_enabled" not in st.session_state:
     st.session_state.voice_enabled = True
 if "current_audio_b64" not in st.session_state:
     st.session_state.current_audio_b64 = None
-if "use_sarvam_stt" not in st.session_state:
-    st.session_state.use_sarvam_stt = True  # NEW: Sarvam STT toggle
 
 # =====================================================
 # INITIALIZE DATABASE
@@ -354,21 +322,6 @@ with st.sidebar:
         help="Automatically read out interview questions."
     )
     st.session_state.voice_enabled = voice_enabled
-    
-    # NEW: Sarvam vs Google STT Toggle
-    use_sarvam = st.checkbox(
-        "🎤 Use Sarvam STT (Hindi/Bengali)",
-        value=st.session_state.use_sarvam_stt,
-        help="Sarvam supports Hindi/Bengali. Google STT is fallback."
-    )
-    st.session_state.use_sarvam_stt = use_sarvam
-    
-    # Show Sarvam API status
-    api_key = st.secrets.get("SARVAM_API_KEY", "")
-    if api_key:
-        st.caption("✅ Sarvam API: Connected")
-    else:
-        st.caption("⚠️ Sarvam API: Key missing (using Google STT)")
     
     st.markdown("---")
     st.markdown("#### Process Progress")
@@ -609,24 +562,27 @@ elif st.session_state.step == "INTERVIEW":
             )
             if audio:
                 audio_bytes = audio['bytes']
-                compressed_bytes = compress_wav(audio_bytes)
-                audio_b64 = base64.b64encode(compressed_bytes).decode('utf-8')
-                st.session_state.current_audio_b64 = audio_b64
-                
-                # Transcribe using Sarvam or Google
-                with st.spinner("🔄 Transcribing your voice..."):
-                    if st.session_state.use_sarvam_stt:
-                        transcription = sarvam_speech_to_text(compressed_bytes)
-                    else:
+                # Prevent infinite transcription loop on Streamlit reruns
+                if st.session_state.get("last_processed_audio_bytes") != audio_bytes:
+                    st.session_state.last_processed_audio_bytes = audio_bytes
+                    compressed_bytes = compress_wav(audio_bytes)
+                    
+                    # Convert WAV to MP3
+                    mp3_bytes = wav_to_mp3(compressed_bytes)
+                    audio_b64 = base64.b64encode(mp3_bytes).decode('utf-8')
+                    st.session_state.current_audio_b64 = audio_b64
+                    
+                    # Transcribe using Google STT
+                    with st.spinner("🔄 Transcribing your voice..."):
                         transcription = google_speech_to_text(compressed_bytes)
-                    
-                    if transcription:
-                        st.session_state.candidate_answer = transcription
-                        st.success(f"📝 Transcribed: {transcription}")
-                        st.rerun()
-                    else:
-                        st.warning("Could not transcribe audio. Please type your answer.")
-                    
+                        
+                        if transcription:
+                            st.session_state.candidate_answer = transcription
+                            st.success(f"📝 Transcribed: {transcription}")
+                            st.rerun()
+                        else:
+                            st.warning("Could not transcribe audio. Please type your answer.")
+                            
         with col_speak:
             if st.button("🔊 Replay Question", use_container_width=True):
                 trigger_tts(st.session_state.current_question)
@@ -635,6 +591,8 @@ elif st.session_state.step == "INTERVIEW":
             if st.button("🗑️ Clear", use_container_width=True):
                 st.session_state.candidate_answer = ""
                 st.session_state.current_audio_b64 = None
+                if "last_processed_audio_bytes" in st.session_state:
+                    del st.session_state["last_processed_audio_bytes"]
                 st.rerun()
 
         # Text input
@@ -657,6 +615,8 @@ elif st.session_state.step == "INTERVIEW":
                 
                 st.session_state.candidate_answer = ""
                 st.session_state.current_audio_b64 = None
+                if "last_processed_audio_bytes" in st.session_state:
+                    del st.session_state["last_processed_audio_bytes"]
                 
                 if q_count < 5:
                     with st.spinner("Evaluating response and formulating next question..."):

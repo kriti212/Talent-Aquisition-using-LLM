@@ -28,7 +28,7 @@ def query_llm(messages, temperature=0.2, json_mode=False, model_name=None):
         payload["format"] = "json"
         
     try:
-        response = requests.post(config.API_URL, json=payload, timeout=60)
+        response = requests.post(config.API_URL, json=payload, timeout=10)
         response.raise_for_status()
         res_json = response.json()
         content = res_json.get("message", {}).get("content", "")

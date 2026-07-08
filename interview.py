@@ -53,10 +53,29 @@ def generate_next_question(job_role, job_description, candidate_skills, candidat
         return question.strip()
     except Exception as e:
         print(f"Error generating interview question: {str(e)}")
-        # Fallback question based on skills
+        q_idx = len(qas_history)
+        
+        # Rotate skill-based fallbacks if candidate has skills
         if candidate_skills:
-            return f"Can you describe a challenging project where you utilized {candidate_skills[0]} and how you overcame any technical hurdles?"
-        return "Could you describe a challenging technical project you've worked on recently and explain your role in it?"
+            skill = candidate_skills[q_idx % len(candidate_skills)]
+            skills_fallbacks = [
+                f"Can you describe a challenging project where you utilized {skill} and how you overcame any technical hurdles?",
+                f"In your experience working with {skill}, what are the key performance optimizations or best practices you follow?",
+                f"How would you explain the core concepts of {skill} to a non-technical team member or client?",
+                f"What is a design choice or architecture decision you had to make while using {skill} on a recent project?",
+                f"How does {skill} compare to alternative tools or libraries you've used in the past?"
+            ]
+            return skills_fallbacks[q_idx % len(skills_fallbacks)]
+            
+        # Rotate general role fallbacks if candidate has no specific skills
+        general_fallbacks = [
+            f"Could you describe a challenging technical project you've worked on recently as a {job_role} and explain your role in it?",
+            "How do you typically approach troubleshooting or debugging a complex technical issue under pressure?",
+            "Can you share an experience where you had to learn a new framework or technology quickly to deliver a feature?",
+            "How do you balance high-quality code standards with tight deadlines in a collaborative team?",
+            "What are your primary technical goals for the next 2-3 years, and how does this job role fit into those plans?"
+        ]
+        return general_fallbacks[q_idx % len(general_fallbacks)]
 
 def evaluate_candidate(candidate_name, job_role, qas_history, model_name=None):
     """
