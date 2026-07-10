@@ -225,7 +225,7 @@ else:
     avg_tech = sum(float(e.get("technical_score", 0.0)) for e in evaluations) / len(evaluations) if evaluations else 0.0
     avg_soft = sum(float(e.get("soft_skills_score", 0.0)) for e in evaluations) / len(evaluations) if evaluations else 0.0
     
-    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+    col_m1, col_m2 = st.columns(2)
     with col_m1:
         st.markdown(f"""
         <div class="metric-card">
@@ -238,20 +238,6 @@ else:
         <div class="metric-card">
             <div class="metric-label">Completed Interviews</div>
             <div class="metric-value">{completed_interviews}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col_m3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">Avg Match Score</div>
-            <div class="metric-value">{avg_final:.1f}%</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col_m4:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">Avg Tech Score</div>
-            <div class="metric-value">{avg_tech:.1f}%</div>
         </div>
         """, unsafe_allow_html=True)
         
