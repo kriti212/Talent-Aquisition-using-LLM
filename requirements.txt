@@ -7,3 +7,8 @@ sentence-transformers
 streamlit-mic-recorder
 SpeechRecognition
 lameenc
+instructor
+pydantic
+openai
+streamlit-geolocation
+

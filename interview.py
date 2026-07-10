@@ -87,15 +87,13 @@ def evaluate_candidate(candidate_name, job_role, qas_history, model_name=None):
         "You MUST return ONLY a valid JSON object. Do not include markdown block wrapping (```json), "
         "notes, or explanations. Conform strictly to this schema:\n"
         "{\n"
-        "  \"technical_score\": 85.50 (float, 0.00 to 100.00 representing overall technical competence),\n"
-        "  \"soft_skills_score\": 90.00 (float, 0.00 to 100.00 representing communication clarity and style),\n"
-        "  \"final_score\": 87.75 (float, 0.00 to 100.00 representing overall fit),\n"
         "  \"detailed_feedback\": [\n"
         "    {\n"
         "      \"question_number\": 1,\n"
         "      \"question\": \"The question asked\",\n"
         "      \"answer\": \"The candidate's response\",\n"
-        "      \"score\": 80.00 (float, 0.00 to 100.00),\n"
+        "      \"technical_score\": 80.00 (float, 0.00 to 100.00 representing technical competence for this response),\n"
+        "      \"soft_skills_score\": 85.00 (float, 0.00 to 100.00 representing communication clarity/style for this response),\n"
         "      \"feedback\": \"Constructive feedback for this specific response\"\n"
         "    }\n"
         "  ],\n"
@@ -138,6 +136,25 @@ def evaluate_candidate(candidate_name, job_role, qas_history, model_name=None):
         response_content = response_content.strip()
         
         evaluation = json.loads(response_content)
+        
+        # Calculate overall averages
+        detailed = evaluation.get("detailed_feedback", [])
+        if detailed:
+            tech_scores = [float(q.get("technical_score") or 0.0) for q in detailed]
+            soft_scores = [float(q.get("soft_skills_score") or 0.0) for q in detailed]
+            
+            avg_tech = sum(tech_scores) / len(detailed)
+            avg_soft = sum(soft_scores) / len(detailed)
+            avg_final = (avg_tech + avg_soft) / 2.0
+            
+            evaluation["technical_score"] = round(avg_tech, 2)
+            evaluation["soft_skills_score"] = round(avg_soft, 2)
+            evaluation["final_score"] = round(avg_final, 2)
+        else:
+            evaluation["technical_score"] = 0.0
+            evaluation["soft_skills_score"] = 0.0
+            evaluation["final_score"] = 0.0
+            
         return evaluation
     except Exception as e:
         print(f"Error evaluating candidate transcript: {str(e)}")
@@ -151,7 +168,8 @@ def evaluate_candidate(candidate_name, job_role, qas_history, model_name=None):
                     "question_number": i + 1,
                     "question": qa.get("question", ""),
                     "answer": qa.get("answer", ""),
-                    "score": 0.0,
+                    "technical_score": 0.0,
+                    "soft_skills_score": 0.0,
                     "feedback": "Evaluation failed due to system/network issues."
                 } for i, qa in enumerate(qas_history)
             ],

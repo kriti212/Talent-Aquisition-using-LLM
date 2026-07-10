@@ -53,6 +53,12 @@ def verify_latest_candidate():
         print(f"  - Soft Skill Score: {eval_report.get('soft_skills_score', 0)}%")
         print(f"  - Final Rating    : {eval_report.get('final_score', 0)}%")
         print(f"  - Recommendation  : {eval_report.get('recommendation', 'N/A')}")
+        
+        detailed = eval_report.get("detailed_feedback", [])
+        if detailed:
+            print("\n  Detailed Question Scoring:")
+            for idx, q_feed in enumerate(detailed):
+                print(f"    [Q{idx+1}] Tech: {q_feed.get('technical_score', 0)} | Soft: {q_feed.get('soft_skills_score', 0)}")
     print("==================================================")
 
 if __name__ == "__main__":

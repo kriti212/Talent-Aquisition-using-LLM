@@ -2,6 +2,11 @@ import pdfplumber
 import json
 import re
 import llm_client
+import instructor
+from openai import OpenAI
+from pydantic import BaseModel, Field
+from typing import List, Optional
+import config
 
 def post_process_education_years(education_list, raw_text):
     """
@@ -109,58 +114,71 @@ def extract_text_from_txt(txt_file_path):
         print(f"Error reading TXT file: {str(e)}")
         raise e
 
-def parse_resume_text_with_llm(resume_text, model_name=None):
+class EducationEntry(BaseModel):
+    degree: str = Field(default="", description="Degree title (e.g., Bachelor of Science in Mathematics)")
+    institution: str = Field(default="", description="University or School name")
+    year: Optional[int] = Field(default=None, description="Graduation/completion year as an integer")
+
+class CandidateProfile(BaseModel):
+    name: str = Field(default="Unknown", description="Full Name of the candidate")
+    email: str = Field(default="", description="Email address")
+    phone: str = Field(default="", description="Phone number")
+    skills: List[str] = Field(default_factory=list, description="List of technical and soft skills extracted from the resume")
+    projects: List[str] = Field(default_factory=list, description="List of projects mentioned in the resume")
+    education: List[EducationEntry] = Field(default_factory=list, description="List of education details")
+    years_of_experience: float = Field(default=0.0, description="Total years of experience as a float")
+    current_location: str = Field(default="", description="Current city, state/country")
+
+def parse_resume_text_with_llm(resume_text, model_name=None, current_location=None):
     """
-    Sends the extracted resume text to Ollama and requests a structured JSON profile back.
+    Sends the extracted resume text to Ollama and requests a structured JSON profile back using instructor and pydantic.
     """
-    system_prompt = (
-        "You are an expert resume parsing assistant. Analyze the provided resume text and extract "
-        "the key details in a clean, structured JSON format. You MUST return ONLY a valid JSON object. "
-        "Do not include any introductions, explanations, markdown wrapping (such as ```json), or notes. "
-        "Conform strictly to the following JSON schema:\n\n"
-        "{\n"
-        "  \"name\": \"Full Name (string, default to 'Unknown')\",\n"
-        "  \"email\": \"Email address (string, default to '')\",\n"
-        "  \"phone\": \"Phone number (string, default to '')\",\n"
-        "  \"skills\": [\"Skill 1\", \"Skill 2\", ...],\n"
-        "  \"projects\": [\"Project 1\", \"Project 2\", ...],\n"
-        "  \"education\": [\n"
-        "    {\n"
-        "      \"degree\": \"Degree title (e.g. Master of Science in Data Science or Bachelor of Science in Mathematics)\",\n"
-        "      \"institution\": \"University or School name\",\n"
-        "      \"year\": 2022\n"
-        "    }\n"
-        "  ],\n"
-        "  \"years_of_experience\": 3.5,\n"
-        "  \"current_location\": \"City, State/Country\"\n"
-        "}\n\n"
-        "For 'education' entries, you MUST extract all degrees and courses. For the 'year' field, extract ONLY the completion/graduation year as an integer (e.g. extract 2027 from a range like '2025 - 2027', and 2024 from '2021 - 2024'). NEVER use the starting year of a range as the graduation year. If some fields like education year cannot be parsed, set them to null. "
-        "Ensure years_of_experience is represented as a float."
-    )
-    
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": f"Resume Text:\n{resume_text}"}
-    ]
-    
     try:
-        # Force JSON mode
-        response_content = llm_client.query_llm(messages, temperature=0.0, json_mode=True, model_name=model_name)
+        # Construct OpenAI compatible endpoint for Ollama
+        base_url = config.API_URL.replace("/api/chat", "/v1")
+        client = instructor.from_openai(
+            OpenAI(
+                base_url=base_url,
+                api_key="ollama"
+            ),
+            mode=instructor.Mode.JSON
+        )
         
-        # Clean response if LLM added markdown formatting
-        response_content = response_content.strip()
-        if response_content.startswith("```json"):
-            response_content = response_content[7:]
-        if response_content.endswith("```"):
-            response_content = response_content[:-3]
-        response_content = response_content.strip()
+        user_content = f"Resume Text:\n{resume_text}"
+        if current_location:
+            user_content = f"Candidate Current Location (via Geolocation/IP): {current_location}\n\n" + user_content
+            
+        profile = client.chat.completions.create(
+            model=model_name or config.LLM_MODEL,
+            response_model=CandidateProfile,
+            messages=[
+                {
+                    "role": "system", 
+                    "content": (
+                        "You are an expert resume parsing assistant. Analyze the provided resume text and extract "
+                        "the key details in a structured format conforming to the schema. "
+                        "If a 'current_location' is provided via Geolocation context, use it to fill the candidate's current_location. "
+                        "For the 'education' year field, extract ONLY the completion/graduation year as an integer. "
+                        "If a range is given, use the final year of that range."
+                    )
+                },
+                {"role": "user", "content": user_content}
+            ],
+            temperature=0.0
+        )
         
-        parsed_json = json.loads(response_content)
+        # Convert Pydantic model to dictionary
+        if hasattr(profile, "model_dump"):
+            parsed_json = profile.model_dump()
+        else:
+            parsed_json = profile.dict()
+            
         if "education" in parsed_json:
             post_process_education_years(parsed_json["education"], resume_text)
+            
         return parsed_json
     except Exception as e:
-        print(f"Error parsing resume with LLM: {str(e)}")
+        print(f"Error parsing resume with instructor/pydantic: {str(e)}")
         # Fallback to a structured empty response so the app doesn't crash
         return {
             "name": "Unknown Candidate",
@@ -315,16 +333,16 @@ def process_resume_and_match(file_path, file_type, all_roles, model_name=None):
     profile, recommendations = parse_resume_and_match_jobs_with_llm(raw_text, all_roles, model_name=model_name)
     return raw_text, profile, recommendations
 
-def process_resume_hybrid_rerank(file_path, file_type, all_roles, model_name=None):
+def process_resume_hybrid_rerank(file_path, file_type, all_roles, model_name=None, current_location=None):
     """
     1. Extracts text from the file path.
     2. Generates candidate resume embedding.
-    3. Performs vector search against MongoDB job roles to filter top 10 matches.
-    4. Queries the LLM to rerank those top 10 matches and return the final top 5 matches,
-       along with candidate details.
+    3. Parses the resume features using instructor and pydantic.
+    4. Performs MongoDB Atlas Vector Search to retrieve the top 5 matching job roles.
     Returns (raw_text, resume_embedding, parsed_profile, recommendations)
     """
     import matcher
+    from database import TalentDB
     
     # 1. Extract raw text
     if file_type.lower() == "pdf":
@@ -343,56 +361,46 @@ def process_resume_hybrid_rerank(file_path, file_type, all_roles, model_name=Non
         except Exception as e:
             print(f"Error generating candidate resume embedding: {str(e)}")
             
-    # 3. Perform vector search to filter top 10
-    print("Performing vector similarity filtering on MongoDB job roles...")
-    vector_matches = matcher.vector_search_jobs(raw_text, all_roles)
-    top_10_results = vector_matches[:10]
-    top_10_roles = [r["role_document"] for r in top_10_results]
-    print(f"Vector search filtered {len(top_10_roles)} candidate roles.")
+    # 3. Extract profile details using instructor and pydantic
+    print("Extracting candidate profile features using instructor and pydantic...")
+    parsed_profile = parse_resume_text_with_llm(raw_text, model_name=model_name, current_location=current_location)
     
-    # 4. Query the LLM to rerank top 10 into top 5
-    profile, recommendations = parse_resume_and_match_jobs_with_llm(raw_text, top_10_roles, model_name=model_name)
-    
-    # Fill up to 5 recommendations if the LLM output was filtered or returned fewer than 5
-    if len(recommendations) < 5 and len(all_roles) > 0:
-        recommended_names = {r["job_role"].lower().strip() for r in recommendations}
+    # 4. Perform MongoDB Atlas Vector Search
+    recommendations = []
+    vector_matches = []
+    if resume_embedding is not None:
+        try:
+            print("Querying MongoDB Atlas Vector Search for job matches...")
+            db = TalentDB()
+            # Call vector search roles
+            vector_matches = db.vector_search_roles(resume_embedding, limit=5)
+            print(f"MongoDB Atlas Vector Search returned {len(vector_matches)} matches.")
+        except Exception as e:
+            print(f"MongoDB Atlas Vector Search failed/not configured: {str(e)}. Falling back to local search.")
+            vector_matches = []
+            
+    # Fallback to local BERT/overlap search if Atlas search returned nothing or failed
+    if not vector_matches:
+        print("Using local semantic similarity search fallback...")
+        local_matches = matcher.vector_search_jobs(raw_text, all_roles)
+        # Convert local matches format
+        vector_matches = local_matches[:5]
         
-        # Use vector_matches to fill in the remaining slots
-        for match in vector_matches:
-            if len(recommendations) >= 5:
-                break
-            role_doc = match["role_document"]
-            r_name = role_doc.get("job_role", "")
-            if r_name.lower().strip() not in recommended_names:
-                recommendations.append({
-                    "job_role": r_name,
-                    "match_score": match.get("vector_score", 50.0),
-                    "reason": "Recommended based on semantic skill compatibility matching.",
-                    "job_description": role_doc.get("job_description", ""),
-                    "skills": role_doc.get("skills", [])
-                })
-                recommended_names.add(r_name.lower().strip())
-                
-        # If still fewer than 5 (e.g. vector search is empty), fill directly from all_roles
-        if len(recommendations) < 5:
-            for role_doc in all_roles:
-                if len(recommendations) >= 5:
-                    break
-                r_name = role_doc.get("job_role", "")
-                if r_name.lower().strip() not in recommended_names:
-                    recommendations.append({
-                        "job_role": r_name,
-                        "match_score": 50.0,
-                        "reason": "Alternative role match from job listing.",
-                        "job_description": role_doc.get("job_description", ""),
-                        "skills": role_doc.get("skills", [])
-                    })
-                    recommended_names.add(r_name.lower().strip())
-                    
+    # Format matches into the standard recommendation schema
+    for match in vector_matches:
+        role_doc = match.get("role_document", {})
+        recommendations.append({
+            "job_role": match.get("job_role", role_doc.get("job_role", "")),
+            "match_score": match.get("vector_score", 50.0),
+            "reason": f"Semantic compatibility match of {match.get('vector_score', 50.0)}% computed via vector search.",
+            "job_description": role_doc.get("job_description", ""),
+            "skills": role_doc.get("skills", [])
+        })
+        
     # Sort recommendations by match score descending to keep best matches first
     recommendations = sorted(recommendations, key=lambda x: x.get("match_score", 0.0), reverse=True)[:5]
     
-    return raw_text, resume_embedding, profile, recommendations
+    return raw_text, resume_embedding, parsed_profile, recommendations
 
 def process_resume(file_path, file_type, model_name=None):
     """

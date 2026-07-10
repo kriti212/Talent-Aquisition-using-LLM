@@ -13,6 +13,44 @@ import json
 from datetime import datetime
 import streamlit.components.v1 as components
 from streamlit_mic_recorder import mic_recorder
+from streamlit_geolocation import streamlit_geolocation
+
+def get_geolocation_location(location_data):
+    """
+    Resolves browser coordinates to a city/country via Nominatim API,
+    falling back to IP Geolocation if coordinates are not available.
+    """
+    if location_data and location_data.get("latitude") and location_data.get("longitude"):
+        lat = location_data["latitude"]
+        lon = location_data["longitude"]
+        try:
+            url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
+            headers = {"User-Agent": "TalentAcquisitionApp/1.0"}
+            r = requests.get(url, headers=headers, timeout=5)
+            if r.status_code == 200:
+                address = r.json().get("address", {})
+                city = address.get("city") or address.get("town") or address.get("village") or address.get("suburb", "")
+                country = address.get("country", "")
+                if city and country:
+                    return f"{city}, {country}"
+                elif country:
+                    return country
+        except Exception as e:
+            print(f"Error reverse geocoding browser coordinates: {e}")
+            
+    # Fallback to IP geolocation
+    try:
+        r = requests.get("http://ip-api.com/json/", timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            city = data.get("city", "")
+            country = data.get("country", "")
+            if city and country:
+                return f"{city}, {country}"
+    except Exception as e:
+        print(f"Error in fallback IP Geolocation: {e}")
+        
+    return ""
 
 # =====================================================
 # PAGE CONFIGURATION
@@ -236,6 +274,8 @@ if "step" not in st.session_state:
     st.session_state.step = "UPLOAD"
 if "candidate_id" not in st.session_state:
     st.session_state.candidate_id = None
+if "geolocation_data" not in st.session_state:
+    st.session_state.geolocation_data = None
 if "parsed_profile" not in st.session_state:
     st.session_state.parsed_profile = None
 if "recommended_roles" not in st.session_state:
@@ -393,11 +433,13 @@ if st.session_state.step == "UPLOAD":
                             else:
                                 # 2. Extract text, parse details & match jobs via Hybrid Vector Reranking
                                 with st.spinner("Extracting candidate profile and calculating job role recommendations..."):
+                                    geo_address = get_geolocation_location(None)
                                     raw_text, resume_embedding, parsed_profile, recommended = parser.process_resume_hybrid_rerank(
                                         tmp_path, 
                                         file_ext, 
                                         all_roles,
-                                        model_name=st.session_state.selected_model
+                                        model_name=st.session_state.selected_model,
+                                        current_location=geo_address
                                     )
                                 
                                 # Clean temp file
