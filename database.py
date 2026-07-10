@@ -171,6 +171,13 @@ class TalentDB:
         """Retrieves a candidate by ID."""
         return self.candidates_col.find_one({"_id": ObjectId(candidate_id)})
 
+    def update_recruiter_status(self, candidate_id, status, notes=""):
+        """Updates the recruiter review status and custom recruiter notes for a candidate."""
+        self.candidates_col.update_one(
+            {"_id": ObjectId(candidate_id)},
+            {"$set": {"recruiter_status": status, "recruiter_notes": notes}}
+        )
+
     def vector_search_roles(self, query_embedding, limit=5):
         """
         Performs MongoDB Atlas Vector Search on the job_roles collection.
