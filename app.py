@@ -582,6 +582,56 @@ elif st.session_state.step == "INTERVIEW":
         trigger_tts(st.session_state.current_question)
         st.session_state.last_spoken_question = st.session_state.current_question
 
+    # Define shared QA submission & evaluation handler
+    def submit_and_evaluate_answer(final_answer):
+        st.session_state.interview_qas[-1]["answer"] = final_answer
+        db.update_last_qa_answer(st.session_state.candidate_id, final_answer, st.session_state.current_audio_b64)
+        
+        # EVALUATE SINGLE QA IMMEDIATELY
+        with st.spinner("Evaluating your response..."):
+            tech_score, soft_score, feedback, extra_eval = interview.evaluate_single_qa(
+                role_name,
+                st.session_state.current_question,
+                final_answer,
+                model_name=st.session_state.selected_model
+            )
+            # Update local state
+            st.session_state.interview_qas[-1]["technical_score"] = tech_score
+            st.session_state.interview_qas[-1]["soft_skills_score"] = soft_score
+            st.session_state.interview_qas[-1]["feedback"] = feedback
+            st.session_state.interview_qas[-1]["extra_eval"] = extra_eval
+            # Save to DB
+            db.update_last_qa_evaluation(
+                st.session_state.candidate_id,
+                tech_score,
+                soft_score,
+                feedback,
+                extra_eval
+            )
+        
+        st.session_state.candidate_answer = ""
+        st.session_state.current_audio_b64 = None
+        if "last_processed_audio_bytes" in st.session_state:
+            del st.session_state["last_processed_audio_bytes"]
+        
+        if q_count < 5:
+            with st.spinner("Formulating next question..."):
+                next_q = interview.generate_next_question(
+                    role_name,
+                    role_desc,
+                    st.session_state.parsed_profile.get("skills", []),
+                    st.session_state.parsed_profile.get("projects", []),
+                    st.session_state.interview_qas,
+                    model_name=st.session_state.selected_model
+                )
+                db.add_interview_qa(st.session_state.candidate_id, next_q)
+                st.session_state.interview_qas.append({"question": next_q, "answer": ""})
+                st.session_state.current_question = next_q
+            st.rerun()
+        else:
+            st.session_state.step = "PREF_FORM"
+            st.rerun()
+
     # Get current answer
     last_qa = st.session_state.interview_qas[-1]
     
@@ -652,31 +702,7 @@ elif st.session_state.step == "INTERVIEW":
             if not final_answer:
                 st.warning("Please provide a response before submitting.")
             else:
-                st.session_state.interview_qas[-1]["answer"] = final_answer
-                db.update_last_qa_answer(st.session_state.candidate_id, final_answer, st.session_state.current_audio_b64)
-                
-                st.session_state.candidate_answer = ""
-                st.session_state.current_audio_b64 = None
-                if "last_processed_audio_bytes" in st.session_state:
-                    del st.session_state["last_processed_audio_bytes"]
-                
-                if q_count < 5:
-                    with st.spinner("Evaluating response and formulating next question..."):
-                        next_q = interview.generate_next_question(
-                            role_name,
-                            role_desc,
-                            st.session_state.parsed_profile.get("skills", []),
-                            st.session_state.parsed_profile.get("projects", []),
-                            st.session_state.interview_qas,
-                            model_name=st.session_state.selected_model
-                        )
-                        db.add_interview_qa(st.session_state.candidate_id, next_q)
-                        st.session_state.interview_qas.append({"question": next_q, "answer": ""})
-                        st.session_state.current_question = next_q
-                    st.rerun()
-                else:
-                    st.session_state.step = "PREF_FORM"
-                    st.rerun()
+                submit_and_evaluate_answer(final_answer)
     else:
         st.info("Interview conversation completed. Transitioning to preferences details.")
 
@@ -711,11 +737,12 @@ elif st.session_state.step == "PREF_FORM":
                 
                 db.save_preferences(st.session_state.candidate_id, preferences)
                 
-                with st.spinner("AI evaluating transcript and scoring your interview (may take a moment)..."):
+                with st.spinner("AI compiling final scorecard and summary (may take a moment)..."):
+                    cand = db.get_candidate(st.session_state.candidate_id)
                     evaluation = interview.evaluate_candidate(
                         st.session_state.parsed_profile.get("name", "Candidate"),
                         st.session_state.selected_role,
-                        st.session_state.interview_qas,
+                        cand.get("qas", []),
                         model_name=st.session_state.selected_model
                     )
                     db.save_evaluation(st.session_state.candidate_id, evaluation)

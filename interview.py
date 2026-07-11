@@ -77,46 +77,58 @@ def generate_next_question(job_role, job_description, candidate_skills, candidat
         ]
         return general_fallbacks[q_idx % len(general_fallbacks)]
 
-def evaluate_candidate(candidate_name, job_role, qas_history, model_name=None):
+def evaluate_single_qa(job_role, question, answer, model_name=None):
     """
-    Reviews the candidate transcript and generates a graded evaluation scoring card.
+    Evaluates a single question-answer response based on specific rubrics.
+    Returns (technical_score, soft_skills_score, feedback, extra_eval_dict).
     """
     system_prompt = (
-        "You are an expert technical interviewer and talent assessor. Your job is to review the "
-        "provided interview transcript and generate a structured grading scorecard.\n\n"
-        "You MUST return ONLY a valid JSON object. Do not include markdown block wrapping (```json), "
-        "notes, or explanations. Conform strictly to this schema:\n"
+        "You are an expert interviewer. Evaluate the candidate's answer to the question based on the rubrics below.\n\n"
+        "You MUST perform step-by-step chain of thought reasoning for the scores before writing the final scores.\n"
+        "You MUST return ONLY a valid JSON object matching the requested schema.\n\n"
+        "--- TECHNICAL COMPETENCE RUBRICS ---\n"
+        "1. Accuracy & Correctness (0-100):\n"
+        "   - 90-100: Flawless accuracy, correct industry terms, directly answers the prompt.\n"
+        "   - 70-89: Conceptually sound with minor factual gaps or slight oversimplification.\n"
+        "   - 50-69: Vague or partially incorrect, misses key technical concepts.\n"
+        "   - 1-49: Completely incorrect, misunderstands core computer science or business concepts.\n"
+        "   - 0: Blank, 'I don't know', or completely irrelevant.\n"
+        "2. Completeness & Depth (0-100):\n"
+        "   - 90-100: Covers edge cases, optimization, performance, or system design trade-offs.\n"
+        "   - 70-89: Good detail, addresses core requirements, lacks deep structural/architectural depth.\n"
+        "   - 50-69: Extremely brief, shallow explanation, only defines terms without context.\n"
+        "   - 1-49: No detail, single word or sentence answer with zero context.\n\n"
+        "--- SOFT SKILLS RUBRICS ---\n"
+        "1. Structure & Organization (0-100):\n"
+        "   - 90-100: Answers using structured frameworks (like STAR method: Situation, Task, Action, Result).\n"
+        "   - 70-89: Logical narrative sequence, easy to follow, minor gaps in STAR context.\n"
+        "   - 50-69: Unstructured, jumps between points, hard to follow candidate's train of thought.\n"
+        "   - 1-49: Unprofessional, chaotic structure, mumbling or highly fragmented response.\n"
+        "2. Clarity & Articulation (0-100):\n"
+        "   - 90-100: Precise vocabulary, concise, professional tone, zero filler words.\n"
+        "   - 70-89: Clear communication, minor vocabulary gaps, occasional fillers (e.g. 'um', 'like').\n"
+        "   - 50-69: Hard to follow, heavy filler reliance, grammatically weak or disorganized phrasing.\n"
+        "   - 1-49: Mumbled, illegible, or unstructured verbal transcription.\n\n"
+        "Conform strictly to this JSON schema:\n"
         "{\n"
-        "  \"detailed_feedback\": [\n"
-        "    {\n"
-        "      \"question_number\": 1,\n"
-        "      \"question\": \"The question asked\",\n"
-        "      \"answer\": \"The candidate's response\",\n"
-        "      \"technical_score\": 80.00 (float, 0.00 to 100.00 representing technical competence for this response),\n"
-        "      \"soft_skills_score\": 85.00 (float, 0.00 to 100.00 representing communication clarity/style for this response),\n"
-        "      \"feedback\": \"Constructive feedback for this specific response\"\n"
-        "    }\n"
-        "  ],\n"
-        "  \"technical_summary\": \"Detailed overview of technical strengths, core gaps, and tools mastered.\",\n"
-        "  \"soft_skill_summary\": \"Assessment of structure, vocabulary, confidence, and empathy.\",\n"
-        "  \"recommendation\": \"Strong Hire / Hire / No Hire\"\n"
-        "}\n\n"
-        "Analyze the depth, correctness, and relevance of each answer carefully. Be objective and fair."
+        "  \"technical_evaluation_reasoning\": \"Chain-of-thought analysis of correctness, terminology, and gaps.\",\n"
+        "  \"technical_sub_scores\": {\n"
+        "    \"accuracy_correctness\": 85.0,\n"
+        "    \"completeness_depth\": 80.0\n"
+        "  },\n"
+        "  \"soft_skills_evaluation_reasoning\": \"Chain-of-thought analysis of narrative structure, STAR flow, and phrasing.\",\n"
+        "  \"soft_skills_sub_scores\": {\n"
+        "    \"structure_organization\": 90.0,\n"
+        "    \"clarity_articulation\": 75.0\n"
+        "  },\n"
+        "  \"feedback\": \"Constructive recommendations to improve candidate answers.\"\n"
+        "}"
     )
     
-    # Format the transcript text
-    transcript_lines = []
-    for i, qa in enumerate(qas_history):
-        q = qa.get("question", "")
-        a = qa.get("answer", "")
-        transcript_lines.append(f"Q{i+1}: {q}\nA{i+1}: {a}")
-        
-    transcript_text = "\n\n".join(transcript_lines)
-    
     user_prompt = (
-        f"Candidate Name: {candidate_name}\n"
-        f"Target Role: {job_role}\n\n"
-        f"Interview Transcript:\n{transcript_text}"
+        f"Role: {job_role}\n"
+        f"Question: {question}\n"
+        f"Answer: {answer}"
     )
     
     messages = [
@@ -126,8 +138,100 @@ def evaluate_candidate(candidate_name, job_role, qas_history, model_name=None):
     
     try:
         response_content = llm_client.query_llm(messages, temperature=0.1, json_mode=True, model_name=model_name)
+        response_content = response_content.strip()
         
-        # Clean markdown characters if they slip in
+        # Locate the JSON block inside the response
+        first_brace = response_content.find('{')
+        last_brace = response_content.rfind('}')
+        if first_brace != -1 and last_brace != -1:
+            response_content = response_content[first_brace:last_brace+1]
+            
+        result = json.loads(response_content)
+        
+        # Extract sub-scores
+        tech_sub = result.get("technical_sub_scores") or {}
+        soft_sub = result.get("soft_skills_sub_scores") or {}
+        
+        accuracy = float(tech_sub.get("accuracy_correctness") or 0.0)
+        depth = float(tech_sub.get("completeness_depth") or 0.0)
+        structure = float(soft_sub.get("structure_organization") or 0.0)
+        clarity = float(soft_sub.get("clarity_articulation") or 0.0)
+        
+        # Compute final average scores for backward compatibility
+        tech_score = round((accuracy + depth) / 2.0, 2)
+        soft_score = round((structure + clarity) / 2.0, 2)
+        
+        extra_eval = {
+            "technical_evaluation_reasoning": result.get("technical_evaluation_reasoning", ""),
+            "technical_sub_scores": {
+                "accuracy_correctness": accuracy,
+                "completeness_depth": depth
+            },
+            "soft_skills_evaluation_reasoning": result.get("soft_skills_evaluation_reasoning", ""),
+            "soft_skills_sub_scores": {
+                "structure_organization": structure,
+                "clarity_articulation": clarity
+            }
+        }
+        
+        return tech_score, soft_score, result.get("feedback", "No feedback provided."), extra_eval
+    except Exception as e:
+        print(f"Error in evaluate_single_qa: {e}")
+        return 0.0, 0.0, f"Evaluation failed: {str(e)}", {}
+
+def evaluate_candidate(candidate_name, job_role, qas_history, model_name=None):
+    """
+    Synthesizes the overall technical and soft skill summaries and calculates final averages.
+    """
+    tech_scores = []
+    soft_scores = []
+    
+    transcript_lines = []
+    for idx, qa in enumerate(qas_history):
+        q = qa.get("question", "")
+        a = qa.get("answer", "")
+        t_score = float(qa.get("technical_score") or 0.0)
+        s_score = float(qa.get("soft_skills_score") or 0.0)
+        
+        tech_scores.append(t_score)
+        soft_scores.append(s_score)
+        
+        transcript_lines.append(
+            f"Q{idx+1}: {q}\n"
+            f"A{idx+1}: {a}\n"
+            f"[Tech Score: {t_score}, Soft Score: {s_score}]"
+        )
+        
+    transcript_text = "\n\n".join(transcript_lines)
+    
+    avg_tech = sum(tech_scores) / len(tech_scores) if tech_scores else 0.0
+    avg_soft = sum(soft_scores) / len(soft_scores) if soft_scores else 0.0
+    avg_final = (avg_tech + avg_soft) / 2.0
+    
+    system_prompt = (
+        "You are an expert recruiter. Analyze the interview transcript (including pre-evaluated scores for each question) "
+        "and generate a final recruitment summary card. You MUST return ONLY a valid JSON object. "
+        "Do not include markdown block wrapping (```json) or notes. Conform strictly to this schema:\n"
+        "{\n"
+        "  \"technical_summary\": \"Overall technical strengths, gaps, and competencies.\",\n"
+        "  \"soft_skill_summary\": \"Overall communication clarity, style, and tone.\",\n"
+        "  \"recommendation\": \"Strong Hire / Hire / No Hire\"\n"
+        "}"
+    )
+    
+    user_prompt = (
+        f"Candidate: {candidate_name}\n"
+        f"Target Role: {job_role}\n\n"
+        f"Transcript & Scores:\n{transcript_text}"
+    )
+    
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+    
+    try:
+        response_content = llm_client.query_llm(messages, temperature=0.1, json_mode=True, model_name=model_name)
         response_content = response_content.strip()
         if response_content.startswith("```json"):
             response_content = response_content[7:]
@@ -135,45 +239,46 @@ def evaluate_candidate(candidate_name, job_role, qas_history, model_name=None):
             response_content = response_content[:-3]
         response_content = response_content.strip()
         
-        evaluation = json.loads(response_content)
+        result = json.loads(response_content)
         
-        # Calculate overall averages
-        detailed = evaluation.get("detailed_feedback", [])
-        if detailed:
-            tech_scores = [float(q.get("technical_score") or 0.0) for q in detailed]
-            soft_scores = [float(q.get("soft_skills_score") or 0.0) for q in detailed]
-            
-            avg_tech = sum(tech_scores) / len(detailed)
-            avg_soft = sum(soft_scores) / len(detailed)
-            avg_final = (avg_tech + avg_soft) / 2.0
-            
-            evaluation["technical_score"] = round(avg_tech, 2)
-            evaluation["soft_skills_score"] = round(avg_soft, 2)
-            evaluation["final_score"] = round(avg_final, 2)
-        else:
-            evaluation["technical_score"] = 0.0
-            evaluation["soft_skills_score"] = 0.0
-            evaluation["final_score"] = 0.0
-            
-        return evaluation
+        # Inject computed scores
+        result["technical_score"] = round(avg_tech, 2)
+        result["soft_skills_score"] = round(avg_soft, 2)
+        result["final_score"] = round(avg_final, 2)
+        
+        # Build detailed feedback array from qas_history to save to final report
+        detailed = []
+        for idx, qa in enumerate(qas_history):
+            detailed.append({
+                "question_number": idx + 1,
+                "question": qa.get("question", ""),
+                "answer": qa.get("answer", ""),
+                "technical_score": float(qa.get("technical_score") or 0.0),
+                "soft_skills_score": float(qa.get("soft_skills_score") or 0.0),
+                "feedback": qa.get("feedback", ""),
+                "extra_eval": qa.get("extra_eval", {})
+            })
+        result["detailed_feedback"] = detailed
+        
+        return result
     except Exception as e:
-        print(f"Error evaluating candidate transcript: {str(e)}")
-        # Construct fallback scorecard
+        print(f"Error in overall evaluate_candidate: {e}")
         return {
-            "technical_score": 0.0,
-            "soft_skills_score": 0.0,
-            "final_score": 0.0,
+            "technical_score": round(avg_tech, 2),
+            "soft_skills_score": round(avg_soft, 2),
+            "final_score": round(avg_final, 2),
             "detailed_feedback": [
                 {
-                    "question_number": i + 1,
+                    "question_number": idx + 1,
                     "question": qa.get("question", ""),
                     "answer": qa.get("answer", ""),
-                    "technical_score": 0.0,
-                    "soft_skills_score": 0.0,
-                    "feedback": "Evaluation failed due to system/network issues."
-                } for i, qa in enumerate(qas_history)
+                    "technical_score": float(qa.get("technical_score") or 0.0),
+                    "soft_skills_score": float(qa.get("soft_skills_score") or 0.0),
+                    "feedback": qa.get("feedback", ""),
+                    "extra_eval": qa.get("extra_eval", {})
+                } for idx, qa in enumerate(qas_history)
             ],
-            "technical_summary": "Failed to generate summary automatically.",
-            "soft_skill_summary": "Failed to generate summary automatically.",
+            "technical_summary": "Failed to compile summary automatically.",
+            "soft_skill_summary": "Failed to compile summary automatically.",
             "recommendation": "Manual Transcript Review Required"
         }
