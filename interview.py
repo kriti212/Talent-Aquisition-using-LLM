@@ -15,6 +15,8 @@ def generate_next_question(job_role, job_description, candidate_skills, candidat
             You are a recruiter.
             Candidate Matched Role:
             {matched_role}
+            Job Role Description:
+            {job_description}
             Candidate Skills:
             {skills}
             Candidate Projects:
@@ -32,6 +34,9 @@ def generate_next_question(job_role, job_description, candidate_skills, candidat
             6. Ask all interview questions in simple, clear, and natural English language that is easy for the candidate to understand.
             7. The interview should feel practical, realistic, and relevant to real-world job responsibilities instead of sounding like an academic examination.
             8. Do NOT write any conversational introduction, filler (e.g., 'Okay, here is my next question'), or logs. Output only the direct question text.
+            9. COMPATIBILITY RULE: First, analyze the candidate's resume details (skills, projects) against the target Job Role ({matched_role}) and description:
+               - If the candidate's skills, projects, or background DO NOT MATCH or have negligible overlap with the target Job Role, you MUST IGNORE the mismatched resume details completely. Ask questions focused SOLELY on the standard core responsibilities, competencies, and duties of the target Job Role ({matched_role}).
+               - If there IS a match or overlap between the candidate's resume details and the target Job Role, generate interview questions that are highly compatible with BOTH the candidate's actual resume (assessing their projects and experiences) and the requirements of the Job Role.
             """
     
     messages = [{"role": "system", "content": system_prompt}]
