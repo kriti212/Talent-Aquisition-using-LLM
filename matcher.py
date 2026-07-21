@@ -214,3 +214,38 @@ def vector_search_jobs(resume_text, all_roles):
     except Exception as e:
         print(f"Error during local vector search: {str(e)}")
         return []
+
+def compute_resume_embedding(resume_text, model=None):
+    """Generates BERT vector embedding list for a given resume text."""
+    model_inst = model or load_bert_model()
+    if model_inst is not None and not _using_fallback:
+        try:
+            return model_inst.encode(resume_text, show_progress_bar=False).tolist()
+        except Exception as e:
+            print(f"Error computing resume embedding: {e}")
+    return []
+
+def rank_roles(resume_emb, all_roles):
+    """Ranks all roles based on cosine similarity with resume embedding."""
+    if not resume_emb:
+        # Fallback if no embedding
+        return [{"job_role": r.get("job_role", ""), "vector_score": 0.0, "role_document": r} for r in all_roles]
+        
+    scored_roles = []
+    for role in all_roles:
+        role_emb = role.get("embedding")
+        if role_emb:
+            similarity = get_cosine_similarity(np.array(resume_emb), np.array(role_emb))
+            similarity = max(0.0, similarity)
+        else:
+            similarity = 0.0
+            
+        scored_roles.append({
+            "job_role": role.get("job_role", ""),
+            "vector_score": round(similarity * 100.0, 2),
+            "role_document": role
+        })
+        
+    scored_roles.sort(key=lambda x: x["vector_score"], reverse=True)
+    return scored_roles
+

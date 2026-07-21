@@ -15,80 +15,85 @@ import streamlit.components.v1 as components
 from streamlit_mic_recorder import mic_recorder
 from streamlit_geolocation import streamlit_geolocation
 
-def get_geolocation_location(location_data):
-    """
-    Resolves browser coordinates to a city/country via Nominatim API,
-    falling back to IP Geolocation if coordinates are not available.
-    """
-    if location_data and location_data.get("latitude") and location_data.get("longitude"):
-        lat = location_data["latitude"]
-        lon = location_data["longitude"]
-        try:
-            url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
-            headers = {"User-Agent": "TalentAcquisitionApp/1.0"}
-            r = requests.get(url, headers=headers, timeout=5)
-            if r.status_code == 200:
-                address = r.json().get("address", {})
-                city = address.get("city") or address.get("town") or address.get("village") or address.get("suburb", "")
-                country = address.get("country", "")
-                if city and country:
-                    return f"{city}, {country}"
-                elif country:
-                    return country
-        except Exception as e:
-            print(f"Error reverse geocoding browser coordinates: {e}")
-            
-    # Fallback to IP geolocation
-    try:
-        r = requests.get("http://ip-api.com/json/", timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            city = data.get("city", "")
-            country = data.get("country", "")
-            if city and country:
-                return f"{city}, {country}"
-    except Exception as e:
-        print(f"Error in fallback IP Geolocation: {e}")
-        
-    return ""
-
 # =====================================================
 # PAGE CONFIGURATION
 # =====================================================
 
 st.set_page_config(
-    page_title="Talent AI - LLM Talent Acquisition",
+    page_title="Talent AI - Smart Hiring Platform",
     page_icon="💼",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # =====================================================
-# CUSTOM CSS
+# CUSTOM CSS FOR MODERN UI & SIDEBAR
 # =====================================================
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 html, body, [class*="css"] {
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-size: 14px !important;
 }
 
-/* Custom premium scrollbar */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+/* Sidebar styling */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.02);
+
+.sidebar-brand {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    font-size: 1.5rem;
+    margin-bottom: 0px;
 }
-::-webkit-scrollbar-thumb {
-    background: rgba(99, 102, 241, 0.3);
-    border-radius: 3px;
+
+.sidebar-badge {
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #818cf8;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 15px;
 }
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.5);
+
+.step-card {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.step-card-active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.main-header {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    font-size: 2.2rem;
+    margin-bottom: 5px;
+}
+
+.sub-header {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    margin-bottom: 25px;
 }
 
 .role-card {
@@ -98,662 +103,498 @@ html, body, [class*="css"] {
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 15px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.role-card:hover {
-    transform: translateY(-3px);
-    border-color: #6366f1;
-    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.15);
-}
-
-.main-title {
-    background: linear-gradient(135deg, #6366f1, #a855f7);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 800;
-    font-size: 2.2rem;
-    margin-bottom: 0.5rem;
-    text-align: center;
-}
-
-.subtitle {
-    color: #94a3b8;
-    font-size: 0.95rem;
-    margin-bottom: 2.5rem;
-    text-align: center;
-    line-height: 1.5;
-}
-
-.score-badge {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.step-container {
-    padding: 12px 18px;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.02);
-    margin-bottom: 10px;
-    border-left: 4px solid #475569;
     transition: all 0.2s ease;
 }
 
-.step-active {
-    border-left-color: #6366f1;
-    background-color: rgba(99, 102, 241, 0.05);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.05);
+.role-card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
 }
 
-.step-done {
-    border-left-color: #22c55e;
-    background-color: rgba(34, 197, 94, 0.02);
-}
-
-.chat-bubble {
-    padding: 14px 18px;
+.question-box {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+    border: 1px solid rgba(99, 102, 241, 0.3);
     border-radius: 12px;
-    margin-bottom: 12px;
-    line-height: 1.6;
-    font-size: 0.95rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-.chat-interviewer {
-    background-color: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.25);
-    border-top-left-radius: 2px;
-}
-
-.chat-candidate {
-    background-color: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-top-right-radius: 2px;
-}
-
-/* Custom premium button styles */
-.stButton > button {
-    background: linear-gradient(135deg, #6366f1, #a855f7) !important;
-    color: white !important;
-    font-weight: 600 !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 8px 24px !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15) !important;
-}
-
-.stButton > button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35) !important;
-    border-color: transparent !important;
-}
-
-/* Custom input textarea focus state */
-textarea {
-    background-color: rgba(255, 255, 255, 0.02) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 8px !important;
-    color: white !important;
-    transition: all 0.3s ease !important;
-}
-
-textarea:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+.score-tag {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 0.85rem;
 }
 </style>
 """, unsafe_allow_html=True)
 
-
-def google_speech_to_text(audio_bytes: bytes) -> str:
-    """
-    Fallback: Google Speech Recognition
-    """
-    try:
-        import speech_recognition as sr
-        
-        recognizer = sr.Recognizer()
-        with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
-            audio_data = recognizer.record(source)
-            text = recognizer.recognize_google(audio_data)
-            return text
-    except sr.UnknownValueError:
-        st.error("Could not understand audio. Please try again.")
-        return ""
-    except sr.RequestError as e:
-        st.error(f"Speech recognition service error: {e}")
-        return ""
-    except Exception as e:
-        st.error(f"Error transcribing audio: {e}")
-        return ""
-
 # =====================================================
-# COMPRESS WAV AUDIO (Reduces payload size)
+# INITIALIZE DATABASE & SESSION STATE
 # =====================================================
 
-def compress_wav(wav_bytes):
-    try:
-        import wave
-        import audioop
-        
-        in_io = io.BytesIO(wav_bytes)
-        with wave.open(in_io, 'rb') as wav_in:
-            params = wav_in.getparams()
-            nchannels, sampwidth, framerate, nframes = params[:4]
-            raw_frames = wav_in.readframes(nframes)
-            
-        # Convert to mono if stereo
-        if nchannels > 1:
-            raw_frames = audioop.tomono(raw_frames, sampwidth, 1, 1)
-            nchannels = 1
-            
-        # Downsample to 16000 Hz
-        target_rate = 16000
-        if framerate != target_rate:
-            raw_frames, _ = audioop.ratecv(raw_frames, sampwidth, nchannels, framerate, target_rate, None)
-            framerate = target_rate
-            
-        out_io = io.BytesIO()
-        with wave.open(out_io, 'wb') as wav_out:
-            wav_out.setnchannels(nchannels)
-            wav_out.setsampwidth(sampwidth)
-            wav_out.setframerate(framerate)
-            wav_out.writeframes(raw_frames)
-            
-        return out_io.getvalue()
-    except Exception as e:
-        print(f"Error compressing WAV: {e}")
-        return wav_bytes
-
-# =====================================================
-# CONVERT WAV TO MP3
-# =====================================================
-
-def wav_to_mp3(wav_bytes):
-    try:
-        import wave
-        import lameenc
-        
-        wav_io = io.BytesIO(wav_bytes)
-        with wave.open(wav_io, 'rb') as wav_file:
-            num_channels = wav_file.getnchannels()
-            sample_width = wav_file.getsampwidth()
-            sample_rate = wav_file.getframerate()
-            num_frames = wav_file.getnframes()
-            pcm_data = wav_file.readframes(num_frames)
-            
-        encoder = lameenc.Encoder()
-        encoder.set_bit_rate(128)
-        encoder.set_in_sample_rate(sample_rate)
-        encoder.set_channels(num_channels)
-        encoder.set_quality(2)
-        
-        mp3_data = encoder.encode(pcm_data)
-        mp3_data += encoder.flush()
-        return mp3_data
-    except Exception as e:
-        print(f"Error encoding to MP3: {e}")
-        return wav_bytes
-
-# =====================================================
-# TEXT-TO-SPEECH (Voice Reader)
-# =====================================================
-
-def trigger_tts(text):
-    if text:
-        clean_text = text.replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
-        js_code = f"""
-        <script>
-            if ('speechSynthesis' in window) {{
-                window.speechSynthesis.cancel();
-                var utterance = new SpeechSynthesisUtterance("{clean_text}");
-                utterance.rate = 1.0;
-                utterance.pitch = 1.0;
-                window.speechSynthesis.speak(utterance);
-            }}
-        </script>
-        """
-        components.html(js_code, height=0)
-
-# =====================================================
-# INITIALIZE SESSION STATE
-# =====================================================
-
-if "step" not in st.session_state:
-    st.session_state.step = "UPLOAD"
-if "candidate_id" not in st.session_state:
-    st.session_state.candidate_id = None
-if "geolocation_data" not in st.session_state:
-    st.session_state.geolocation_data = None
-if "parsed_profile" not in st.session_state:
-    st.session_state.parsed_profile = None
-if "recommended_roles" not in st.session_state:
-    st.session_state.recommended_roles = []
-if "selected_role" not in st.session_state:
-    st.session_state.selected_role = None
-if "interview_qas" not in st.session_state:
-    st.session_state.interview_qas = []
-if "current_question" not in st.session_state:
-    st.session_state.current_question = ""
-if "selected_model" not in st.session_state:
-    st.session_state.selected_model = "gemma4:e2b"
-if "candidate_answer" not in st.session_state:
-    st.session_state.candidate_answer = ""
-if "last_spoken_question" not in st.session_state:
-    st.session_state.last_spoken_question = ""
-if "voice_enabled" not in st.session_state:
-    st.session_state.voice_enabled = True
-if "current_audio_b64" not in st.session_state:
-    st.session_state.current_audio_b64 = None
-
-# =====================================================
-# INITIALIZE DATABASE
-# =====================================================
-
-# Initialize database
 @st.cache_resource(show_spinner=False)
 def get_db():
-    from database import TalentDB
     db = TalentDB()
     db.seed_roles()
     return db
 
+def text_to_speech_gtts(text):
+    """
+    Generates ultra-realistic, human-like neural voice MP3 audio using Microsoft Azure Neural TTS (edge-tts).
+    Falls back gracefully to gTTS if edge-tts is unavailable.
+    """
+    import asyncio
+    try:
+        import edge_tts
+        async def _async_generate():
+            communicate = edge_tts.Communicate(text, "en-US-AriaNeural")
+            audio_data = b""
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    audio_data += chunk["data"]
+            return audio_data
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        audio_bytes = loop.run_until_complete(_async_generate())
+        loop.close()
+        if audio_bytes:
+            return audio_bytes
+    except Exception as e:
+        print(f"Error in edge-tts neural voice generation: {e}")
+
+    try:
+        from gtts import gTTS
+        import io
+        tts = gTTS(text=text, lang='en', tld='co.uk')
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        return fp.read()
+    except Exception as e:
+        print(f"Error generating fallback gTTS audio: {e}")
+        return None
+
+def get_geolocation_location(location_data):
+    """
+    Resolves browser coordinates to a city/country via Nominatim API,
+    falling back to IP Geolocation if coordinates are not available.
+    """
+    pass
+
 db = get_db()
 
-# =====================================================
-# PREMIUM LOGO HEADER
-# =====================================================
-
-st.markdown("""
-<div style="text-align: center; margin-top: 15px; margin-bottom: 10px;">
-    <svg width="65" height="65" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#6366f1" />
-                <stop offset="100%" stop-color="#a855f7" />
-            </linearGradient>
-        </defs>
-        <rect width="24" height="24" rx="5" fill="url(#iconGrad)"/>
-        <path d="M7 9C7 8.44772 7.44772 8 8 8H16C16.5523 8 17 8.44772 17 9V15C17 15.5523 16.5523 16 16 16H8C7.44772 16 7 15.5523 7 15V9Z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-        <path d="M12 8V6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        <circle cx="12" cy="5" r="1" fill="white"/>
-        <circle cx="10" cy="11" r="1" fill="white"/>
-        <circle cx="14" cy="11" r="1" fill="white"/>
-        <path d="M10 13.5H14" stroke="white" stroke-width="1" stroke-linecap="round"/>
-        <rect x="5.5" y="10.5" width="1.5" height="3" rx="0.5" fill="white"/>
-        <rect x="17" y="10.5" width="1.5" height="3" rx="0.5" fill="white"/>
-    </svg>
-</div>
-""", unsafe_allow_html=True)
+# Initialize session state variables
+if "candidate_id" not in st.session_state:
+    st.session_state.candidate_id = None
+if "candidate_profile" not in st.session_state:
+    st.session_state.candidate_profile = None
+if "resume_text" not in st.session_state:
+    st.session_state.resume_text = ""
+if "matched_roles" not in st.session_state:
+    st.session_state.matched_roles = []
+if "selected_role" not in st.session_state:
+    st.session_state.selected_role = None
+if "qas_history" not in st.session_state:
+    st.session_state.qas_history = []
+if "current_question" not in st.session_state:
+    st.session_state.current_question = None
+if "interview_finished" not in st.session_state:
+    st.session_state.interview_finished = False
+if "evaluation_report" not in st.session_state:
+    st.session_state.evaluation_report = None
+if "nav_page" not in st.session_state:
+    st.session_state.nav_page = "Upload Resume"
 
 # =====================================================
-# STEP 1: UPLOAD RESUME
+# SIDEBAR NAVIGATION & BRANDING
 # =====================================================
 
-if st.session_state.step == "UPLOAD":
-    st.markdown('<div class="main-title">Talent Acquisition Platform</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Upload your resume to begin a dynamic interview.</div>', unsafe_allow_html=True)
+with st.sidebar:
+    st.markdown('<div class="sidebar-brand">Talent AI</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-badge">Candidate Portal</div>', unsafe_allow_html=True)
+    st.markdown("---")
+
+    # Navigation buttons
+    st.subheader("🧭 Navigation")
+    if st.button("📄 1. Upload Resume", use_container_width=True, type="primary" if st.session_state.nav_page == "Upload Resume" else "secondary"):
+        st.session_state.nav_page = "Upload Resume"
+        st.rerun()
+
+    if st.button("🎤 2. Take / Resume Interview", use_container_width=True, type="primary" if st.session_state.nav_page == "Take / Resume Interview" else "secondary"):
+        st.session_state.nav_page = "Take / Resume Interview"
+        st.rerun()
+
+    st.markdown("---")
+
+    # Active Candidate Status Badge
+    if st.session_state.candidate_profile:
+        cand_name = st.session_state.candidate_profile.get("name", "Active Candidate")
+        st.markdown("### 👤 Active Candidate")
+        st.success(f"**{cand_name}**")
+        if st.session_state.selected_role:
+            st.caption(f"Role: **{st.session_state.selected_role.get('job_role')}**")
+        if st.button("🚪 Clear & Start Fresh", use_container_width=True):
+            st.session_state.candidate_id = None
+            st.session_state.candidate_profile = None
+            st.session_state.selected_role = None
+            st.session_state.qas_history = []
+            st.session_state.current_question = None
+            st.session_state.interview_finished = False
+            st.session_state.evaluation_report = None
+            st.session_state.nav_page = "Upload Resume"
+            st.rerun()
+        st.markdown("---")
+
+    # Resume In-Progress Interview Selector
+    st.markdown("### 🔁 Resume Existing Application")
+    in_progress_candidates = list(db.candidates_col.find({"interview_status": {"$in": ["IN_PROGRESS", "PENDING"]}}))
     
-    st.subheader("Upload Candidate Resume")
-    uploaded_file = st.file_uploader(
-        "Supported formats: PDF, TXT (Max size 10MB)",
-        type=["pdf", "txt"],
-        help="Your resume will be processed using secure parsers."
-    )
-    
-    if uploaded_file is not None:
-        file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
-        if file_size_mb > 10.0:
-            st.error("File exceeds the 10MB size limit. Please upload a smaller file.")
-        else:
-            if st.button("Process & Match Roles", type="primary", use_container_width=True):
-                with st.spinner("Reading resume contents and extracting skills..."):
-                    file_ext = uploaded_file.name.split(".")[-1]
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_ext}") as tmp:
-                        tmp.write(uploaded_file.getvalue())
-                        tmp_path = tmp.name
-                        
-                    try:
-                        # 1. Fetch all job roles from database
-                        all_roles = db.get_all_roles()
-                        
-                        if not all_roles:
-                            st.error("No job roles found in database. Seed job_role.json first.")
-                            os.unlink(tmp_path)
-                        else:
-                            # 2. Extract text, parse details & match jobs via Hybrid Vector Reranking
-                            with st.spinner("Extracting candidate profile and calculating job role recommendations..."):
-                                geo_address = get_geolocation_location(None)
-                                raw_text, resume_embedding, parsed_profile, recommended = parser.process_resume_hybrid_rerank(
-                                    tmp_path, 
-                                    file_ext, 
-                                    all_roles,
-                                    model_name=st.session_state.selected_model,
-                                    current_location=geo_address
-                                )
-                            
-                            # Clean temp file
-                            os.unlink(tmp_path)
-                            
-                            st.session_state.parsed_profile = parsed_profile
-                            st.session_state.recommended_roles = recommended
-                            
-                            # 3. Create candidate entry in MongoDB (including resume text and vector embedding)
-                            cand_id = db.create_candidate(parsed_profile, raw_text, resume_embedding=resume_embedding)
-                            st.session_state.candidate_id = cand_id
-                            
-                            # Transition to role selection
-                            st.session_state.step = "SELECT_ROLE"
-                            st.rerun()
-                    except Exception as e:
-                        st.error(f"Error processing resume: {str(e)}")
-                        if os.path.exists(tmp_path):
-                            os.unlink(tmp_path)
-
-# =====================================================
-# STEP 2: SELECT ROLE
-# =====================================================
-
-elif st.session_state.step == "SELECT_ROLE":
-    st.markdown('<div class="main-title">Select Job Role</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Review your parsed profile details and choose which job role to interview for.</div>', unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([1, 2])
-    
-    with col1:
-        st.subheader("Parsed Profile")
-        profile = st.session_state.parsed_profile
-        
-        st.text_input("Name", value=profile.get("name", ""), disabled=True)
-        st.text_input("Email", value=profile.get("email", ""), disabled=True)
-        st.text_input("Phone", value=profile.get("phone", ""), disabled=True)
-        st.text_input("Current Location", value=profile.get("current_location", ""), disabled=True)
-        st.number_input("Years of Experience", value=float(profile.get("years_of_experience") or 0.0), disabled=True)
-        
-        st.markdown("**Skills Found:**")
-        st.write(", ".join(profile.get("skills", [])) or "None")
-        
-    with col2:
-        st.subheader("Recommended Job Roles (Top 5 Matches)")
-        
-        for idx, rec in enumerate(st.session_state.recommended_roles):
-            role_name = rec["job_role"]
-            score = rec["match_score"]
-            desc = rec["job_description"]
-            skills_req = rec["skills"]
+    if in_progress_candidates:
+        cand_options = {"Select candidate to resume...": None}
+        for c in in_progress_candidates:
+            c_name = c.get("personal_info", {}).get("name", "Unnamed Candidate")
+            c_role = c.get("selected_role") or "No Role Selected"
+            cand_options[f"{c_name} ({c_role})"] = c
             
-            with st.container():
-                st.markdown(f"""
-                <div class="role-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h4 style="margin: 0; color: #818cf8;">{role_name}</h4>
-                        <span class="score-badge">Match: {score}%</span>
-                    </div>
-                    <p style="font-size: 0.9rem; margin-top: 10px; color: #cbd5e1;">{desc[:250]}...</p>
-                    <div style="font-size: 0.8rem; color: #94a3b8;">
-                        <b>Key Skills:</b> {", ".join([s.get("skill_name", "") for s in skills_req])}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                if st.button(f"Apply & Start Interview - {role_name}", key=f"btn_{idx}", use_container_width=True):
-                    db.update_candidate_role(st.session_state.candidate_id, role_name)
-                    st.session_state.selected_role = role_name
-                    
-                    with st.spinner("Generating your first question..."):
-                        first_q = interview.generate_next_question(
-                            role_name, 
-                            desc, 
-                            profile.get("skills", []), 
-                            profile.get("projects", []), 
-                            [], 
-                            model_name=st.session_state.selected_model
-                        )
-                        st.session_state.current_question = first_q
-                        db.add_interview_qa(st.session_state.candidate_id, first_q)
-                        st.session_state.interview_qas.append({"question": first_q, "answer": ""})
-                        
-                    st.session_state.step = "INTERVIEW"
-                    st.rerun()
-
-# =====================================================
-# STEP 3: INTERVIEW (WITH VOICE SUPPORT)
-# =====================================================
-
-elif st.session_state.step == "INTERVIEW":
-    role_name = st.session_state.selected_role
-    role_data = db.get_role_by_name(role_name)
-    role_desc = role_data.get("job_description", "") if role_data else ""
-    
-    st.markdown(f'<div class="main-title">Interview: {role_name}</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Answer each question professionally. Your answers determine the follow-up questions.</div>', unsafe_allow_html=True)
-    
-    q_count = len(st.session_state.interview_qas)
-    progress_val = q_count / 5.0
-    st.progress(progress_val, text=f"Question {q_count} of 5")
-    
-    # Voice settings control
-    voice_enabled = st.checkbox(
-        "🔊 Auto-read questions aloud",
-        value=st.session_state.voice_enabled,
-        help="Automatically read out interview questions."
-    )
-    st.session_state.voice_enabled = voice_enabled
-    
-    # Voice info
-    st.caption("🎤 Speak in Hindi, Bengali, or English | Click microphone to record")
-    
-    st.write("### Conversation")
-    
-    for i, qa in enumerate(st.session_state.interview_qas):
-        st.markdown(f"""
-        <div class="chat-bubble chat-interviewer">
-            <b>Interviewer (AI)</b><br/>{qa['question']}
-        </div>
-        """, unsafe_allow_html=True)
+        selected_cand_label = st.selectbox("Choose Candidate", list(cand_options.keys()))
+        selected_cand_doc = cand_options[selected_cand_label]
         
-        if qa.get("answer"):
+        if selected_cand_doc and st.button("▶️ Resume Selected Interview", use_container_width=True):
+            st.session_state.candidate_id = str(selected_cand_doc["_id"])
+            st.session_state.candidate_profile = selected_cand_doc.get("personal_info", {})
+            st.session_state.candidate_profile["skills"] = selected_cand_doc.get("extracted_skills", [])
+            st.session_state.candidate_profile["projects"] = selected_cand_doc.get("projects", [])
+            st.session_state.resume_text = selected_cand_doc.get("resume_text", "")
+            st.session_state.qas_history = selected_cand_doc.get("qas", [])
+            
+            # Load role if selected
+            role_name = selected_cand_doc.get("selected_role")
+            if role_name:
+                st.session_state.selected_role = db.get_role_by_name(role_name)
+                
+            st.session_state.interview_finished = (selected_cand_doc.get("interview_status") == "COMPLETED")
+            st.session_state.nav_page = "Take / Resume Interview"
+            st.rerun()
+    else:
+        st.caption("No pending interviews to resume.")
+
+# =====================================================
+# PAGE 1: UPLOAD RESUME & MATCH ROLES
+# =====================================================
+
+if st.session_state.nav_page == "Upload Resume":
+    st.markdown('<div class="main-header">Smart Talent Sourcing</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Start a new application or restore an in-progress interview seamlessly.</div>', unsafe_allow_html=True)
+
+    tab_new, tab_resume = st.tabs(["📄 Start New Application", "🔁 Resume Incomplete Interview"])
+
+    with tab_new:
+        uploaded_file = st.file_uploader("Upload Resume (PDF format)", type=["pdf"])
+
+        if uploaded_file is not None:
+            with st.spinner("📄 Reading PDF and extracting structured profile via AI..."):
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                    tmp.write(uploaded_file.read())
+                    tmp_path = tmp.name
+
+                resume_text = parser.extract_text_from_pdf(tmp_path)
+                os.remove(tmp_path)
+
+                if not resume_text:
+                    st.error("Failed to extract text from the PDF. Please try another PDF.")
+                else:
+                    profile = parser.parse_resume_text_with_llm(resume_text)
+                    st.session_state.resume_text = resume_text
+                    st.session_state.candidate_profile = profile
+
+                    # Perform BERT Semantic Reranking
+                    with st.spinner("🤖 Computing BERT Vector Similarity with Job Roles..."):
+                        all_roles = db.get_all_roles()
+                        matched_roles = matcher.vector_search_jobs(resume_text, all_roles)
+                        st.session_state.matched_roles = matched_roles
+                        resume_emb = None
+
+                    # Save candidate to MongoDB
+                    cand_id = db.create_candidate(profile, resume_text, resume_emb)
+                    st.session_state.candidate_id = cand_id
+                    st.success("✅ Resume parsed and candidate profile created successfully!")
+
+    with tab_resume:
+        st.subheader("🔍 Resume Your Incomplete Interview")
+        st.caption("Enter the email address registered on your application to restore your session.")
+        
+        email_input = st.text_input("Registered Email Address:", placeholder="candidate@example.com")
+        if st.button("🔍 Find & Resume Interview", type="primary"):
+            if not email_input.strip():
+                st.warning("Please enter your registered email address.")
+            else:
+                with st.spinner("Searching database for active interview session..."):
+                    cand_doc = db.find_incomplete_candidate_by_email(email_input)
+                    if cand_doc:
+                        st.session_state.candidate_id = str(cand_doc["_id"])
+                        st.session_state.candidate_profile = cand_doc.get("personal_info", {})
+                        st.session_state.candidate_profile["skills"] = cand_doc.get("extracted_skills", [])
+                        st.session_state.candidate_profile["projects"] = cand_doc.get("projects", [])
+                        st.session_state.resume_text = cand_doc.get("resume_text", "")
+                        st.session_state.qas_history = cand_doc.get("qas", [])
+                        
+                        role_name = cand_doc.get("selected_role")
+                        if role_name:
+                            st.session_state.selected_role = db.get_role_by_name(role_name)
+                            
+                        st.session_state.interview_finished = (cand_doc.get("interview_status") == "COMPLETED")
+                        st.session_state.nav_page = "Take / Resume Interview"
+                        st.success("✅ Session restored successfully! Redirecting to your interview...")
+                        st.rerun()
+                    else:
+                        st.warning("⚠️ No active in-progress interview was found for this email address. Please upload your resume to start a new application.")
+
+    # Display Parsed Profile & Top Matched Roles
+    if st.session_state.candidate_profile and st.session_state.matched_roles:
+        st.markdown("---")
+        col_prof, col_roles = st.columns([1, 1])
+
+        with col_prof:
+            st.subheader("📋 Parsed Candidate Profile")
+            prof = st.session_state.candidate_profile
+            st.write(f"**Name:** {prof.get('name', 'N/A')}")
+            st.write(f"**Email:** `{prof.get('email', 'N/A')}`")
+            st.write(f"**Phone:** `{prof.get('phone', 'N/A')}`")
+            st.write(f"**Location:** {prof.get('current_location', 'N/A')}")
+            st.write(f"**Years of Experience:** {prof.get('years_of_experience', 0.0)}")
+
+            st.write("**Extracted Skills:**")
+            skills = prof.get("skills", [])
+            if skills:
+                st.write(", ".join([f"`{s}`" for s in skills]))
+            else:
+                st.caption("No specific skills extracted.")
+
+        with col_roles:
+            st.subheader("🎯 Top 5 Recommended Job Roles")
+            for idx, role_item in enumerate(st.session_state.matched_roles[:5]):
+                role_name = role_item["job_role"]
+                score = role_item["vector_score"]
+                role_doc = role_item["role_document"]
+
+                with st.container():
+                    st.markdown(f"""
+                    <div class="role-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="margin: 0; color: #818cf8;">{role_name}</h4>
+                            <span class="score-tag">Match: {score}%</span>
+                        </div>
+                        <p style="font-size: 0.85rem; color: #cbd5e1; margin-top: 8px;">
+                            {role_doc.get("job_description", "")[:120]}...
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    if st.button(f"Apply for {role_name}", key=f"apply_{idx}", type="primary", use_container_width=True):
+                        st.session_state.selected_role = role_doc
+                        # Update DB with selected role
+                        db.update_selected_role(st.session_state.candidate_id, role_name)
+                        st.session_state.nav_page = "Take / Resume Interview"
+                        st.rerun()
+
+# =====================================================
+# PAGE 2: TAKE / RESUME INTERVIEW
+# =====================================================
+
+elif st.session_state.nav_page == "Take / Resume Interview":
+    st.markdown('<div class="main-header">Voice Technical Interview</div>', unsafe_allow_html=True)
+
+    if not st.session_state.candidate_id:
+        st.warning("⚠️ No active candidate selected. Please upload a resume first or select an existing candidate from the sidebar.")
+    elif not st.session_state.selected_role:
+        st.info("ℹ️ Please select a job role on the 'Upload Resume' page before starting the interview.")
+    else:
+        role_doc = st.session_state.selected_role
+        job_role_name = role_doc.get("job_role", "Target Role")
+        job_desc = role_doc.get("job_description", "")
+
+        # Check if interview is already finished
+        if st.session_state.interview_finished or len(st.session_state.qas_history) >= 5:
+            st.session_state.interview_finished = True
+            st.markdown("### 🏆 Technical Interview Completed")
+            st.success(f"Interview for **{job_role_name}** is completed! Generating final evaluation report...")
+
+            # Run evaluation if not already computed
+            if not st.session_state.evaluation_report:
+                with st.spinner("🤖 LLM synthesizing technical skills and soft skills scorecard..."):
+                    cand_name = st.session_state.candidate_profile.get("name", "Candidate")
+                    eval_res = interview.evaluate_candidate(cand_name, job_role_name, st.session_state.qas_history)
+                    st.session_state.evaluation_report = eval_res
+                    # Save to MongoDB
+                    db.save_evaluation(st.session_state.candidate_id, eval_res)
+
+            report = st.session_state.evaluation_report
+            if report:
+                st.markdown("---")
+                st.markdown("### 📊 Final AI Assessment Scorecard")
+                col_r1, col_r2 = st.columns(2)
+
+                with col_r1:
+                    st.markdown(f"**Overall Recommendation:** `{report.get('recommendation', 'N/A')}`")
+                    st.markdown(f"**Communication & Soft Skills Score:** **{report.get('soft_skills_score', 0.0)}%**")
+                    st.markdown("**Technical Assessment Summary:**")
+                    st.info(report.get("technical_summary", "Evaluation complete."))
+
+                with col_r2:
+                    st.markdown("**Communication & Style Summary:**")
+                    st.success(report.get("soft_skill_summary", "Evaluation complete."))
+
+                # Display Question Transcripts & Short Bulleted Feedback
+                st.markdown("---")
+                st.markdown("### 📝 Interview Transcript & Feedback")
+                for idx, qa in enumerate(st.session_state.qas_history):
+                    with st.expander(f"Q{idx+1}: {qa.get('question')}", expanded=True):
+                        st.write(f"💬 **Answer:** *\"{qa.get('answer')}\"*")
+                        st.markdown(f"**Feedback:**\n{qa.get('feedback', 'No feedback.')}")
+
+        else:
+            # INTERVIEW IN PROGRESS FLOW (MAX 5 QUESTIONS)
+            q_num = len(st.session_state.qas_history) + 1
+            st.write(f"Role: **{job_role_name}** | Question **{q_num} of 5**")
+            st.progress(q_num / 5)
+
+            # Generate Next Question if needed
+            if not st.session_state.current_question:
+                with st.spinner("🤖 AI Interviewer generating next role-specific question..."):
+                    cand_skills = st.session_state.candidate_profile.get("skills", [])
+                    cand_projects = st.session_state.candidate_profile.get("projects", [])
+                    next_q = interview.generate_next_question(
+                        job_role=job_role_name,
+                        job_description=job_desc,
+                        candidate_skills=cand_skills,
+                        candidate_projects=cand_projects,
+                        qas_history=st.session_state.qas_history
+                    )
+                    st.session_state.current_question = next_q
+
+            question_text = st.session_state.current_question
+
+            # Render Question Box
             st.markdown(f"""
-            <div class="chat-bubble chat-candidate">
-                <b>You</b><br/>{qa['answer']}
+            <div class="question-box">
+                <span style="color: #6366f1; font-weight: 700; font-size: 0.85rem; text-transform: uppercase;">Question {q_num} of 5</span>
+                <h3 style="margin-top: 5px; color: #f8fafc;">{question_text}</h3>
             </div>
             """, unsafe_allow_html=True)
-    
-    # Speak the current question if not already spoken
-    if st.session_state.voice_enabled and st.session_state.current_question and st.session_state.current_question != st.session_state.last_spoken_question:
-        trigger_tts(st.session_state.current_question)
-        st.session_state.last_spoken_question = st.session_state.current_question
 
-    # Define shared QA submission & evaluation handler
-    def submit_and_evaluate_answer(final_answer):
-        st.session_state.interview_qas[-1]["answer"] = final_answer
-        db.update_last_qa_answer(st.session_state.candidate_id, final_answer, st.session_state.current_audio_b64)
-        
-        # EVALUATE SINGLE QA IMMEDIATELY
-        with st.spinner("Evaluating your response..."):
-            tech_score, soft_score, feedback, extra_eval = interview.evaluate_single_qa(
-                role_name,
-                st.session_state.current_question,
-                final_answer,
-                model_name=st.session_state.selected_model
-            )
-            # Update local state
-            st.session_state.interview_qas[-1]["technical_score"] = tech_score
-            st.session_state.interview_qas[-1]["soft_skills_score"] = soft_score
-            st.session_state.interview_qas[-1]["feedback"] = feedback
-            st.session_state.interview_qas[-1]["extra_eval"] = extra_eval
-            # Save to DB
-            db.update_last_qa_evaluation(
-                st.session_state.candidate_id,
-                tech_score,
-                soft_score,
-                feedback,
-                extra_eval
-            )
-        
-        st.session_state.candidate_answer = ""
-        st.session_state.current_audio_b64 = None
-        if "last_processed_audio_bytes" in st.session_state:
-            del st.session_state["last_processed_audio_bytes"]
-        
-        if q_count < 5:
-            with st.spinner("Formulating next question..."):
-                next_q = interview.generate_next_question(
-                    role_name,
-                    role_desc,
-                    st.session_state.parsed_profile.get("skills", []),
-                    st.session_state.parsed_profile.get("projects", []),
-                    st.session_state.interview_qas,
-                    model_name=st.session_state.selected_model
+            # Human-like Voice Reader (gTTS with Session State Caching & Autoplay)
+            if st.session_state.get("tts_question_key") != question_text:
+                st.session_state.current_tts_audio = text_to_speech_gtts(question_text)
+                st.session_state.tts_question_key = question_text
+
+            if st.session_state.get("current_tts_audio"):
+                st.write("🔊 **AI Interviewer Audio (Natural Human Voice):**")
+                st.audio(st.session_state.current_tts_audio, format="audio/mp3", autoplay=True)
+
+            # Answer Input Methods: Voice or Text
+            st.subheader("Your Answer")
+            col_audio, col_skip = st.columns([3, 1])
+
+            with col_audio:
+                st.write("🎙️ **Record Voice Answer:**")
+                audio = mic_recorder(
+                    start_prompt="Start Recording 🔴",
+                    stop_prompt="Stop & Transcribe ⏹️",
+                    key=f"rec_{q_num}"
                 )
-                db.add_interview_qa(st.session_state.candidate_id, next_q)
-                st.session_state.interview_qas.append({"question": next_q, "answer": ""})
-                st.session_state.current_question = next_q
-            st.rerun()
-        else:
-            st.session_state.step = "PREF_FORM"
-            st.rerun()
 
-    # Get current answer
-    last_qa = st.session_state.interview_qas[-1]
-    
-    if not last_qa.get("answer"):
-        if "candidate_answer" not in st.session_state:
-            st.session_state.candidate_answer = ""
-        if "current_audio_b64" not in st.session_state:
-            st.session_state.current_audio_b64 = None
-
-        st.write("🎙️ **Voice Input:**")
-        col_rec, col_speak, col_clear = st.columns([2, 2, 1])
-        
-        with col_rec:
-            # NEW: Use mic_recorder with Sarvam STT
-            audio = mic_recorder(
-                start_prompt="🎙️ Start Recording",
-                stop_prompt="⏹️ Stop & Transcribe",
-                format="wav",
-                key=f"audio_rec_{q_count}"
-            )
+            transcribed_text = ""
             if audio:
-                audio_bytes = audio['bytes']
-                # Prevent infinite transcription loop on Streamlit reruns
-                if st.session_state.get("last_processed_audio_bytes") != audio_bytes:
-                    st.session_state.last_processed_audio_bytes = audio_bytes
-                    compressed_bytes = compress_wav(audio_bytes)
-                    
-                    # Convert WAV to MP3
-                    mp3_bytes = wav_to_mp3(compressed_bytes)
-                    audio_b64 = base64.b64encode(mp3_bytes).decode('utf-8')
-                    st.session_state.current_audio_b64 = audio_b64
-                    
-                    # Transcribe using Google STT
-                    with st.spinner("🔄 Transcribing your voice..."):
-                        transcription = google_speech_to_text(compressed_bytes)
+                st.audio(audio['bytes'], format='audio/wav')
+                # Transcribe using SpeechRecognition
+                with st.spinner("🎙️ Transcribing audio using SpeechRecognition..."):
+                    try:
+                        import speech_recognition as sr
+                        r = sr.Recognizer()
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_wav:
+                            tmp_wav.write(audio['bytes'])
+                            tmp_wav_path = tmp_wav.name
                         
-                        if transcription:
-                            st.session_state.candidate_answer = transcription
-                            st.success(f"📝 Transcribed: {transcription}")
-                            st.rerun()
-                        else:
-                            st.warning("Could not transcribe audio. Please type your answer.")
+                        with sr.AudioFile(tmp_wav_path) as source:
+                            audio_data = r.record(source)
+                            transcribed_text = r.recognize_google(audio_data)
+                        os.remove(tmp_wav_path)
+                        st.success(f"Transcribed: *\"{transcribed_text}\"*")
+                    except Exception as err:
+                        st.warning("Could not transcribe speech automatically. You can type your answer below.")
+
+            answer_input = st.text_area("Or type your response:", value=transcribed_text, height=120, key=f"txt_{q_num}")
+
+            col_submit, col_skip_btn = st.columns([2, 1])
+
+            with col_submit:
+                if st.button("📤 Submit Answer", type="primary", use_container_width=True):
+                    if not answer_input.strip():
+                        st.warning("Please provide or record an answer before submitting, or click Skip.")
+                    else:
+                        with st.spinner("🤖 Evaluating answer accuracy and soft skills..."):
+                            t_score, s_score, feedback, extra_eval = interview.evaluate_single_qa(job_role_name, question_text, answer_input)
                             
-        with col_speak:
-            if st.button("🔊 Replay Question", use_container_width=True):
-                trigger_tts(st.session_state.current_question)
-                
-        with col_clear:
-            if st.button("🗑️ Clear", use_container_width=True):
-                st.session_state.candidate_answer = ""
-                st.session_state.current_audio_b64 = None
-                if "last_processed_audio_bytes" in st.session_state:
-                    del st.session_state["last_processed_audio_bytes"]
-                st.rerun()
+                            # Encode audio bytes to MP3 Base64 if available
+                            b64_audio = ""
+                            if audio:
+                                try:
+                                    import lameenc
+                                    encoder = lameenc.Encoder()
+                                    encoder.set_bit_rate(64)
+                                    encoder.set_in_sample_rate(16000)
+                                    encoder.set_channels(1)
+                                    encoder.set_quality(5)
+                                    mp3_data = encoder.encode(audio['bytes']) + encoder.flush()
+                                    b64_audio = base64.b64encode(mp3_data).decode('utf-8')
+                                except Exception:
+                                    b64_audio = base64.b64encode(audio['bytes']).decode('utf-8')
 
-        # Text input
-        user_answer = st.text_area(
-            "Your Answer:", 
-            value=st.session_state.candidate_answer, 
-            height=150, 
-            placeholder="Type your response here or click 'Start Recording' above to speak..."
-        )
-        
-        submitted = st.button("Submit Answer", type="primary", use_container_width=True)
-        
-        if submitted:
-            final_answer = user_answer.strip()
-            if not final_answer:
-                st.warning("Please provide a response before submitting.")
-            else:
-                submit_and_evaluate_answer(final_answer)
-    else:
-        st.info("Interview conversation completed. Transitioning to preferences details.")
+                            qa_record = {
+                                "question": question_text,
+                                "answer": answer_input,
+                                "technical_score": t_score,
+                                "soft_skills_score": s_score,
+                                "feedback": feedback,
+                                "extra_eval": extra_eval,
+                                "audio_b64": b64_audio
+                            }
+                            
+                            st.session_state.qas_history.append(qa_record)
+                            db.append_qa(st.session_state.candidate_id, qa_record)
+                            
+                            st.session_state.current_question = None
+                            if len(st.session_state.qas_history) >= 5:
+                                st.session_state.interview_finished = True
+                                cand_name = st.session_state.candidate_profile.get("name", "Candidate") if st.session_state.candidate_profile else "Candidate"
+                                eval_res = interview.evaluate_candidate(cand_name, job_role_name, st.session_state.qas_history)
+                                st.session_state.evaluation_report = eval_res
+                                db.save_evaluation(st.session_state.candidate_id, eval_res)
+                            st.rerun()
 
-# =====================================================
-# STEP 4: PREFERENCES FORM
-# =====================================================
-
-elif st.session_state.step == "PREF_FORM":
-    st.markdown('<div class="main-title">Preferences Details</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Almost done! Provide your job preferences to complete the assessment.</div>', unsafe_allow_html=True)
-    
-    with st.form("pref_form"):
-        st.subheader("Candidate Preferences")
-        
-        salary = st.text_input("Salary Expectation (e.g. $100,000 / 12 LPA)", placeholder="Expected CTC")
-        relocation = st.radio("Are you open to relocation?", ["Yes", "No", "Negotiable"], index=0)
-        wfh = st.selectbox("Workplace Preference", ["Remote", "Hybrid", "On-site"], index=1)
-        curr_loc = st.text_input("Current Location (City, Country)", placeholder="e.g. Mumbai, India")
-        
-        submitted = st.form_submit_button("Submit & Generate Report", use_container_width=True)
-        
-        if submitted:
-            if not salary.strip() or not curr_loc.strip():
-                st.warning("Please fill out all preference fields.")
-            else:
-                preferences = {
-                    "salary_expectation": salary,
-                    "relocation_ok": relocation,
-                    "wfh_preference": wfh,
-                    "current_location": curr_loc
-                }
-                
-                db.save_preferences(st.session_state.candidate_id, preferences)
-                
-                with st.spinner("AI compiling final scorecard and summary (may take a moment)..."):
-                    cand = db.get_candidate(st.session_state.candidate_id)
-                    evaluation = interview.evaluate_candidate(
-                        st.session_state.parsed_profile.get("name", "Candidate"),
-                        st.session_state.selected_role,
-                        cand.get("qas", []),
-                        model_name=st.session_state.selected_model
-                    )
-                    db.save_evaluation(st.session_state.candidate_id, evaluation)
+            with col_skip_btn:
+                # SKIP QUESTION BUTTON (Requirement 5)
+                if st.button("⏭️ Skip Question", use_container_width=True):
+                    qa_record = {
+                        "question": question_text,
+                        "answer": "[Question Skipped]",
+                        "technical_score": 0.0,
+                        "soft_skills_score": 0.0,
+                        "feedback": "• Question was skipped by the candidate.",
+                        "extra_eval": {},
+                        "audio_b64": ""
+                    }
+                    st.session_state.qas_history.append(qa_record)
+                    db.append_qa(st.session_state.candidate_id, qa_record)
                     
-                st.session_state.step = "REPORT"
-                st.rerun()
-
-elif st.session_state.step == "REPORT":
-    st.markdown("""
-    <div style="text-align: center; padding: 50px 20px; background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(8px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); max-width: 800px; margin: 40px auto;">
-        <h1 style="color: #22c55e; font-size: 2.8rem; margin-bottom: 20px; font-weight: 800;">🎉 Thank You!</h1>
-        <h3 style="color: #cbd5e1; font-weight: 500; margin-bottom: 25px;">Your interview has been completed and submitted successfully.</h3>
-        <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 35px;">
-            We have safely recorded your profile, preferences, and interview transcript in our database. 
-            Our recruitment team will review your assessment shortly and get in touch with you regarding the next steps in our hiring process.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("Start New Application", type="primary", use_container_width=True):
-            # Reset session states
-            for key in ["step", "candidate_id", "parsed_profile", "recommended_roles", "selected_role", "interview_qas", "current_question", "candidate_answer", "current_audio_b64", "last_spoken_question"]:
-                if key in st.session_state:
-                    del st.session_state[key]
-            st.rerun()
+                    st.session_state.current_question = None
+                    if len(st.session_state.qas_history) >= 5:
+                        st.session_state.interview_finished = True
+                        cand_name = st.session_state.candidate_profile.get("name", "Candidate") if st.session_state.candidate_profile else "Candidate"
+                        eval_res = interview.evaluate_candidate(cand_name, job_role_name, st.session_state.qas_history)
+                        st.session_state.evaluation_report = eval_res
+                        db.save_evaluation(st.session_state.candidate_id, eval_res)
+                    st.rerun()
