@@ -265,11 +265,10 @@ if st.session_state.nav_page == "Upload Resume":
 
                 # Perform BERT Semantic Reranking
                 with st.spinner("🤖 Computing BERT Vector Similarity with Job Roles..."):
-                    model = matcher.load_bert_model()
-                    resume_emb = matcher.compute_resume_embedding(resume_text, model)
                     all_roles = db.get_all_roles()
-                    matched_roles = matcher.rank_roles(resume_emb, all_roles)
+                    matched_roles = matcher.vector_search_jobs(resume_text, all_roles)
                     st.session_state.matched_roles = matched_roles
+                    resume_emb = None
 
                 # Save candidate to MongoDB
                 cand_id = db.create_candidate(profile, resume_text, resume_emb)
