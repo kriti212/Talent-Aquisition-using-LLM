@@ -537,7 +537,10 @@ elif st.session_state.nav_page == "Take / Resume Interview":
                             st.session_state.current_question = None
                             if len(st.session_state.qas_history) >= 5:
                                 st.session_state.interview_finished = True
-                                db.candidates_col.update_one({"_id": db.candidates_col.find_one({"_id": st.session_state.candidate_id})["_id"] if isinstance(st.session_state.candidate_id, str) else st.session_state.candidate_id}, {"$set": {"interview_status": "COMPLETED"}})
+                                cand_name = st.session_state.candidate_profile.get("name", "Candidate") if st.session_state.candidate_profile else "Candidate"
+                                eval_res = interview.evaluate_candidate(cand_name, job_role_name, st.session_state.qas_history)
+                                st.session_state.evaluation_report = eval_res
+                                db.save_evaluation(st.session_state.candidate_id, eval_res)
                             st.rerun()
 
             with col_skip_btn:
@@ -558,5 +561,8 @@ elif st.session_state.nav_page == "Take / Resume Interview":
                     st.session_state.current_question = None
                     if len(st.session_state.qas_history) >= 5:
                         st.session_state.interview_finished = True
-                        db.candidates_col.update_one({"_id": db.candidates_col.find_one({"_id": st.session_state.candidate_id})["_id"] if isinstance(st.session_state.candidate_id, str) else st.session_state.candidate_id}, {"$set": {"interview_status": "COMPLETED"}})
+                        cand_name = st.session_state.candidate_profile.get("name", "Candidate") if st.session_state.candidate_profile else "Candidate"
+                        eval_res = interview.evaluate_candidate(cand_name, job_role_name, st.session_state.qas_history)
+                        st.session_state.evaluation_report = eval_res
+                        db.save_evaluation(st.session_state.candidate_id, eval_res)
                     st.rerun()
