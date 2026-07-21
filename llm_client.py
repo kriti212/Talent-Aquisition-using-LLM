@@ -27,15 +27,23 @@ def query_llm(messages, temperature=0.2, json_mode=False, model_name=None):
     if json_mode:
         payload["format"] = "json"
         
-    try:
-        response = requests.post(config.API_URL, json=payload, timeout=90)
-        response.raise_for_status()
-        res_json = response.json()
-        content = res_json.get("message", {}).get("content", "")
-        return content
-    except Exception as e:
-        print(f"Error querying custom LLM API ({config.API_URL}): {str(e)}")
-        raise e
+    max_retries = 3
+    retry_delay = 2
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(config.API_URL, json=payload, timeout=45)
+            response.raise_for_status()
+            res_json = response.json()
+            content = res_json.get("message", {}).get("content", "")
+            return content
+        except Exception as e:
+            if attempt == max_retries - 1:
+                print(f"Error querying custom LLM API ({config.API_URL}) after {max_retries} attempts: {str(e)}")
+                raise e
+            print(f"LLM API query attempt {attempt + 1} failed: {str(e)}. Retrying in {retry_delay}s...")
+            import time
+            time.sleep(retry_delay)
+            retry_delay *= 2
 
 def get_available_models():
     """

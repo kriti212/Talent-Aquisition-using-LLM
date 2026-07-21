@@ -231,3 +231,19 @@ class TalentDB:
             }
             for doc in results
         ]
+
+    def update_last_qa_evaluation(self, candidate_id, tech_score, soft_score, feedback, extra_eval=None):
+        """Updates the evaluation scores and feedback for the most recent QA entry."""
+        candidate = self.candidates_col.find_one({"_id": ObjectId(candidate_id)})
+        if not candidate or not candidate.get("qas"):
+            return
+        qas = candidate["qas"]
+        qas[-1]["technical_score"] = tech_score
+        qas[-1]["soft_skills_score"] = soft_score
+        qas[-1]["feedback"] = feedback
+        if extra_eval is not None:
+            qas[-1]["extra_eval"] = extra_eval
+        self.candidates_col.update_one(
+            {"_id": ObjectId(candidate_id)},
+            {"$set": {"qas": qas}}
+        )

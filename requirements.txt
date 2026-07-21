@@ -8,10 +8,6 @@ streamlit-mic-recorder
 SpeechRecognition
 lameenc
 instructor
-openai
-instructor
 pydantic
 openai
 streamlit-geolocation
-gTTS
-
