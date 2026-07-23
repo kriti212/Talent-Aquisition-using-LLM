@@ -129,10 +129,6 @@ class CandidateProfile(BaseModel):
     years_of_experience: float = Field(default=0.0, description="Total years of experience as a float")
     current_location: str = Field(default="", description="Current city, state/country")
 
-def parse_resume(resume_text, model_name=None, current_location=None):
-    """Alias for parse_resume_text_with_llm for backwards compatibility."""
-    return parse_resume_text_with_llm(resume_text, model_name=model_name, current_location=current_location)
-
 def parse_resume_text_with_llm(resume_text, model_name=None, current_location=None):
     """
     Sends the extracted resume text to Ollama and requests a structured JSON profile back using instructor and pydantic.

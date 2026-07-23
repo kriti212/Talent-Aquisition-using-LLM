@@ -107,26 +107,9 @@ class TalentDB:
         
     def update_candidate_role(self, candidate_id, role_name):
         """Updates the selected role for the candidate."""
-        if not candidate_id:
-            return
-        c_id = ObjectId(candidate_id) if isinstance(candidate_id, str) else candidate_id
         self.candidates_col.update_one(
-            {"_id": c_id},
+            {"_id": ObjectId(candidate_id)},
             {"$set": {"selected_role": role_name, "interview_status": "IN_PROGRESS"}}
-        )
-
-    def update_selected_role(self, candidate_id, role_name):
-        """Alias for update_candidate_role."""
-        return self.update_candidate_role(candidate_id, role_name)
-
-    def append_qa(self, candidate_id, qa_record):
-        """Appends a question-answer pair record to candidate qas array."""
-        if not candidate_id:
-            return
-        c_id = ObjectId(candidate_id) if isinstance(candidate_id, str) else candidate_id
-        self.candidates_col.update_one(
-            {"_id": c_id},
-            {"$push": {"qas": qa_record}}
         )
         
     def add_interview_qa(self, candidate_id, question, answer=None, audio_b64=None, score=None, feedback=None):
@@ -176,42 +159,17 @@ class TalentDB:
         
     def save_evaluation(self, candidate_id, evaluation_report):
         """Saves the final evaluation report and marks interview as COMPLETED."""
-        if not candidate_id:
-            return
-        c_id = ObjectId(candidate_id) if isinstance(candidate_id, str) else candidate_id
         self.candidates_col.update_one(
-            {"_id": c_id},
+            {"_id": ObjectId(candidate_id)},
             {"$set": {
                 "evaluation": evaluation_report,
-                "final_score": float(evaluation_report.get("final_score", 0.0)),
-                "technical_score": float(evaluation_report.get("technical_score", 0.0)),
-                "soft_skills_score": float(evaluation_report.get("soft_skills_score", 0.0)),
                 "interview_status": "COMPLETED"
             }}
         )
         
     def get_candidate(self, candidate_id):
         """Retrieves a candidate by ID."""
-        if not candidate_id:
-            return None
-        c_id = ObjectId(candidate_id) if isinstance(candidate_id, str) else candidate_id
-        return self.candidates_col.find_one({"_id": c_id})
-
-    def find_incomplete_candidate_by_email(self, email):
-        """
-        Finds a candidate with interview_status 'IN_PROGRESS' by email address.
-        Case-insensitive email match.
-        """
-        if not email:
-            return None
-        import re
-        regex = re.compile(f"^{re.escape(email.strip())}$", re.IGNORECASE)
-        # Search for candidate with matching email and status IN_PROGRESS
-        candidate = self.candidates_col.find_one({
-            "personal_info.email": regex,
-            "interview_status": {"$in": ["IN_PROGRESS", "PENDING"]}
-        })
-        return candidate
+        return self.candidates_col.find_one({"_id": ObjectId(candidate_id)})
 
     def update_recruiter_status(self, candidate_id, status, notes=""):
         """Updates the recruiter review status and custom recruiter notes for a candidate."""
@@ -270,3 +228,36 @@ class TalentDB:
             {"_id": ObjectId(candidate_id)},
             {"$set": {"qas": qas}}
         )
+
+    def get_candidate_by_email(self, email):
+        """Retrieves the most recent candidate document matching the email."""
+        return self.candidates_col.find_one(
+            {"personal_info.email": email.strip()},
+            sort=[("created_at", pymongo.DESCENDING)]
+        )
+
+    def update_candidate_parsed_profile(self, candidate_id, personal_info, education, extracted_skills, projects, years_of_experience):
+        """Updates the parsed profile fields for the candidate."""
+        self.candidates_col.update_one(
+            {"_id": ObjectId(candidate_id)},
+            {"$set": {
+                "personal_info": personal_info,
+                "education": education,
+                "extracted_skills": extracted_skills,
+                "projects": projects,
+                "years_of_experience": years_of_experience
+            }}
+        )
+
+    def save_candidate_feedback(self, candidate_id, email, role, rating, comments):
+        """Saves user experience feedback to a separate feedbacks collection."""
+        import datetime
+        feedback_doc = {
+            "candidate_id": ObjectId(candidate_id) if candidate_id else None,
+            "email": email,
+            "role": role,
+            "rating": int(rating),
+            "comments": comments.strip(),
+            "submitted_at": datetime.datetime.utcnow()
+        }
+        self.db["feedbacks"].insert_one(feedback_doc)
